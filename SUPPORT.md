@@ -8,6 +8,7 @@ Start with these docs:
 - `USER_GUIDE.md` for end-user installation and usage
 - `INTERFACE.md` for spreadsheet contract and accepted values
 - `PRIVACY.md` for data handling scope
+- `ACGME_COMPLIANCE.md` for policy-aware usage disclaimers
 
 ## Request help
 
@@ -24,3 +25,9 @@ When reporting a problem, include:
 ## Security issues
 
 For vulnerabilities, follow `SECURITY.md` and use private reporting.
+
+## Compliance questions
+
+- For policy interpretation, consult your institution compliance/legal team.
+- Project maintainers can explain technical behavior, but cannot provide legal
+  advice or guarantee policy compliance.

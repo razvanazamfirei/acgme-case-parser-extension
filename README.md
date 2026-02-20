@@ -5,6 +5,17 @@ output and auto-filling the ACGME Case Entry page:
 
 - `https://apps.acgme.org/ads/CaseLogs/CaseEntry/*`
 
+## Important Compliance Notice
+
+- This project is **not affiliated with, endorsed by, or sponsored by ACGME**.
+- Use is intended only for users who already have authorized ADS access and
+  institutional approval for this workflow.
+- Users are responsible for complying with:
+  - `https://www.acgme.org/about/legal/terms-of-use`
+  - `https://apps.acgme.org/ads/` (including any ADS-specific terms/policies)
+- This repository does not provide legal advice and cannot guarantee compliance
+  in every environment.
+
 ## Features
 
 - Parse `.xlsx`, `.xls`, and `.csv` exports in the popup.
@@ -91,6 +102,7 @@ This includes:
 - `INTERFACE.md`: Parser and runtime interface contract
 - `SETTINGS.md`: Runtime options
 - `PRIVACY.md`: Data handling and privacy statement
+- `ACGME_COMPLIANCE.md`: Non-affiliation, policy-aware usage, legal disclaimer
 - `CHANGELOG.md`: Release history
 - `USER_GUIDE.md`: End-user install and operation guide (PDF-friendly Markdown)
 - `CHROME_STORE_PUBLISHING_AND_USAGE_GUIDE.md`: Publishing and listing checklist

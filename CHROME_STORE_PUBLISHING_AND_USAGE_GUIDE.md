@@ -21,6 +21,20 @@ Source of truth for permissions and scopes:
 - `manifest.json`
 - `dist/manifest.json`
 
+### Compliance language to include in listing/docs
+
+Use explicit wording that this tool is for authorized users and is not
+affiliated with ACGME.
+
+Recommended text:
+
+`This extension is an independent tool for authorized ADS users and is not affiliated with, endorsed by, or sponsored by ACGME.`
+
+Do not claim universal legal compliance in listing text. Instead state intended
+policy-aware use and user responsibility.
+
+Canonical wording is maintained in `ACGME_COMPLIANCE.md`.
+
 ### Store listing requirements (current docs)
 
 Required/expected in listing:
@@ -49,11 +63,11 @@ Chrome requires a narrow, easy-to-understand single purpose.
 
 ### Single purpose field (<=132 chars)
 
-`Upload standardized case logs and fill ACGME Case Entry form fields for one case at a time.`
+`For authorized ADS users: upload standardized case logs and fill ACGME Case Entry fields one case at a time.`
 
 ### Extended listing description starter
 
-`ACGME Case Submitter imports standardized case-log spreadsheets (.xlsx/.xls/.csv), loads one case at a time in the popup, and fills matching fields on the ACGME Case Entry page. It can optionally submit after fill, track pending/submitted/skipped status, and resume sessions from local browser storage.`
+`ACGME Case Submitter imports standardized case-log spreadsheets (.xlsx/.xls/.csv), loads one case at a time in the popup, and fills matching fields on the ACGME Case Entry page for authorized users. It can optionally submit after fill, track pending/submitted/skipped status, and resume sessions from local browser storage. This extension is not affiliated with, endorsed by, or sponsored by ACGME.`
 
 ## 3) Permission Justifications (copy/paste ready)
 
@@ -68,6 +82,10 @@ Permission:
 Justification:
 
 `This extension only works on the ACGME Case Entry page. It reads and updates form controls on that page to fill case details from the user-uploaded spreadsheet and optionally click Submit when the user chooses Fill+Submit or BEAST mode.`
+
+Safer variant if you want extra compliance clarity:
+
+`This extension only runs on the ACGME Case Entry page and is intended for authorized user-directed workflow automation in compliance with ACGME/ADS terms.`
 
 ### Storage permission
 
@@ -94,7 +112,19 @@ Sensitive data question guidance:
 - If uploaded files can include identifiable patient/health data, disclose this accordingly in CWS data disclosures and provide a privacy policy URL.
 - If files are strictly de-identified training logs, disclose exactly that scope.
 
-## 5) Pre-submit technical checklist for this repo
+## 5) ACGME terms awareness checklist
+
+Before enabling automation in production, confirm all of the following:
+
+1. Users have authorized ADS account access.
+2. Institution/program approves this workflow.
+3. Usage aligns with:
+   - `https://www.acgme.org/about/legal/terms-of-use`
+   - `https://apps.acgme.org/ads/`
+4. No scraping/mirroring/unauthorized access behavior is introduced.
+5. Public docs keep the non-affiliation and no-legal-advice disclaimer.
+
+## 6) Pre-submit technical checklist for this repo
 
 1. Ensure build is fresh (`dist/` regenerated before zip).
 2. Confirm permissions stayed minimal:
@@ -106,7 +136,7 @@ Sensitive data question guidance:
    - manifest/package are `1.3.0`
 5. Keep release notes aligned with `CHANGELOG.md`.
 
-## 6) How to use the extension (with screenshots + file mapping)
+## 7) How to use the extension (with screenshots + file mapping)
 
 ### Step 1: Build and load unpacked extension
 
@@ -208,7 +238,7 @@ Relevant files:
 - `src/popup/app.js` (BeastMode flow)
 - `src/popup/form.js` (validation)
 
-## 7) Source links for Chrome policy/docs used
+## 8) Source links for Chrome policy/docs used
 
 - Program policies (single purpose): <https://developer.chrome.com/docs/webstore/program-policies/policies>
 - Quality guidelines (single purpose clarity): <https://developer.chrome.com/docs/webstore/program-policies/quality-guidelines-faq>
@@ -218,6 +248,6 @@ Relevant files:
 - Permission warning guidance: <https://developer.chrome.com/docs/extensions/develop/concepts/permission-warnings>
 - Developer account registration fee ($5 one-time): <https://support.google.com/chrome_webstore/answer/187591>
 
-## 8) Screenshot notes
+## 9) Screenshot notes
 
 Screenshots in `assets/screenshots/` were generated from the current popup UI build with representative sample values for documentation.

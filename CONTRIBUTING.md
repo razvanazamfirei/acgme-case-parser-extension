@@ -35,6 +35,8 @@ npm run build
 - Do not add remote code execution or hidden telemetry.
 - Keep parser-extension interface compatibility documented in `INTERFACE.md`.
 - Update docs when behavior, settings, or data handling changes.
+- Do not claim guaranteed policy compliance; use the disclaimer language in
+  `ACGME_COMPLIANCE.md`.
 
 ## Pull request checklist
 
@@ -42,6 +44,7 @@ npm run build
 - [ ] `npm run check` passes
 - [ ] `npm run build` passes
 - [ ] Any UX/API changes are reflected in docs
+- [ ] Compliance-related behavior/docs are updated when relevant
 - [ ] `CHANGELOG.md` is updated when needed
 
 ## Reporting bugs

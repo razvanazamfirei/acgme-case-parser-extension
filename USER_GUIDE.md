@@ -11,7 +11,23 @@ fill the ACGME Case Entry form on:
 
 - `https://apps.acgme.org/ads/CaseLogs/CaseEntry/*`
 
-## 2. Requirements
+## 2. Compliance and authorization
+
+- This extension is **not affiliated with, endorsed by, or sponsored by ACGME**.
+- You must use it only with authorized ADS credentials and institutional
+  approval.
+- You are responsible for following:
+  - `https://www.acgme.org/about/legal/terms-of-use`
+  - `https://apps.acgme.org/ads/` (including ADS-specific policies)
+- ACGME Terms include restrictions on unauthorized access and use of automated
+  tools to monitor/copy site content. Obtain institutional and/or ACGME
+  approval before using automation features.
+- This guide is operational documentation, not legal advice.
+- No disclaimer can guarantee compliance by itself. Your account rights,
+  institution policy, and ACGME terms control permitted use.
+- For repository-level compliance language, see `ACGME_COMPLIANCE.md`.
+
+## 3. Requirements
 
 - Google Chrome (current stable)
 - Access to ACGME Case Entry
@@ -34,7 +50,7 @@ Optional columns:
 - `Specialized Vascular Access`
 - `Specialized Monitoring Techniques`
 
-## 3. Installation
+## 4. Installation
 
 ### Option A: Install from Chrome Web Store (recommended)
 
@@ -58,7 +74,7 @@ npm run build
 5. Click `Load unpacked`.
 6. Select the repository `dist/` folder.
 
-## 4. First-time setup
+## 5. First-time setup
 
 1. Navigate to the ACGME Case Entry page and keep that tab open.
 2. Click the extension icon in the Chrome toolbar.
@@ -72,7 +88,7 @@ npm run build
 
 ![Settings](assets/screenshots/02-settings.png)
 
-## 5. Load your case file
+## 6. Load your case file
 
 1. In the popup, click `Choose Excel File`.
 2. Select your `.xlsx`, `.xls`, or `.csv` file.
@@ -80,7 +96,7 @@ npm run build
 
 ![Upload](assets/screenshots/01-upload.png)
 
-## 6. Review and process each case
+## 7. Review and process each case
 
 1. Use `Previous`, `Next`, or `Jump to` to navigate.
 2. Review and adjust any field values before submission.
@@ -95,7 +111,7 @@ Validation and status messages appear in the popup.
 
 ![Action Status](assets/screenshots/04-actions.png)
 
-## 7. BEAST mode (bulk processing)
+## 8. BEAST mode (bulk processing)
 
 Use `START BEAST MODE` to auto-process all pending cases.
 
@@ -105,7 +121,7 @@ Behavior:
 - Pauses on validation/submission issues so you can correct and continue
 - Supports stop/resume from the same button
 
-## 8. Troubleshooting
+## 9. Troubleshooting
 
 ### Popup says “Navigate to ACGME Case Entry page first”
 
@@ -119,7 +135,7 @@ Behavior:
 
 ### Missing columns error during upload
 
-- Verify exact header names against section 2
+- Verify exact header names against section 3
 - Remove extra header rows above the real column header row
 
 ### Attending not found
@@ -127,7 +143,7 @@ Behavior:
 - Confirm exact `LASTNAME, FIRSTNAME` format
 - Set a Default Attending in settings
 
-## 9. Data and privacy
+## 10. Data and privacy
 
 - Files are parsed locally in your browser popup.
 - Settings and session progress are stored in Chrome storage.
@@ -135,7 +151,7 @@ Behavior:
 
 See `PRIVACY.md` for details.
 
-## 10. Export this guide to PDF
+## 11. Export this guide to PDF
 
 Example with Pandoc:
 

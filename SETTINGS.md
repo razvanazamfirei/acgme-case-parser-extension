@@ -37,6 +37,13 @@ When enabled, ASA `5E` with empty pathology automatically selects `Non-Trauma`.
 
 Controls warning display in popup status messages for fuzzy/default mappings.
 
+## Compliance Reminder
+
+Settings do not replace your responsibility to comply with ACGME and ADS terms:
+
+- `https://www.acgme.org/about/legal/terms-of-use`
+- `https://apps.acgme.org/ads/`
+
 ## Persistence
 
 - Session state: `chrome.storage.local`

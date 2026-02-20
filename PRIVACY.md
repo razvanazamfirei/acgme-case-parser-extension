@@ -5,6 +5,14 @@
 The extension processes uploaded case files locally in the browser popup and
 fills the active ACGME case-entry web page.
 
+## Compliance and Affiliation
+
+- This project is not affiliated with, endorsed by, or sponsored by ACGME.
+- Users must comply with:
+  - `https://www.acgme.org/about/legal/terms-of-use`
+  - `https://apps.acgme.org/ads/`
+- This document describes data handling only and is not legal advice.
+
 ## Data Storage
 
 Stored locally:
