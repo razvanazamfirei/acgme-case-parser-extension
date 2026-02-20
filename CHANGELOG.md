@@ -11,7 +11,7 @@
 ### Changed
 
 - Repository docs updated for standalone usage (no `chrome-extension/` prefix)
-- Packaging script now uses `npm run` command chaining for manager-agnostic usage
+- Packaging script now uses `bun run` command chaining for manager-agnostic usage
 
 ## 1.1.0 - 2026-02-11
 

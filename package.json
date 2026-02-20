@@ -2,7 +2,7 @@
   "name": "acgme-case-submitter",
   "version": "1.3.0",
   "description": "Chrome extension to auto-fill ACGME case entry forms",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "author": "Razvan Azamfirei",
   "repository": {
     "type": "git",
@@ -29,7 +29,13 @@
     "lint:fix": "biome lint --write .",
     "format": "biome format --write .",
     "check": "biome check .",
-    "package:zip": "npm run clean && npm run build && cd dist && zip -r ../acgme-case-submitter-v$npm_package_version.zip ."
+    "package:zip": "VERSION=$(bun -e \"const p = await Bun.file('package.json').json(); console.log(p.version);\") && bun run clean && bun run build && cd dist && zip -r ../acgme-case-submitter-v$VERSION.zip .",
+    "bump:patch": "bun run scripts/release/bump.mjs patch",
+    "bump:minor": "bun run scripts/release/bump.mjs minor",
+    "bump:major": "bun run scripts/release/bump.mjs major",
+    "release:prepare": "bun run check && bun run build && bun run package:zip",
+    "release:tag": "VERSION=$(bun -e \"const p = await Bun.file('package.json').json(); console.log(p.version);\") && git tag -a v$VERSION -m \"Release v$VERSION\" && git push origin v$VERSION",
+    "release:publish": "bun run release:prepare && bun run release:tag"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.2",

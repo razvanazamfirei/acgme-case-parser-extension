@@ -8,8 +8,8 @@
 
 ## Validation
 
-- [ ] `npm run check`
-- [ ] `npm run build`
+- [ ] `bun run check`
+- [ ] `bun run build`
 - [ ] Manual popup/content-script flow validated
 
 ## Documentation

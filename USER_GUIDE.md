@@ -65,8 +65,8 @@ Optional columns:
 2. Build the extension:
 
 ```bash
-npm install
-npm run build
+bun install
+bun run build
 ```
 
 3. Open `chrome://extensions`.
@@ -80,10 +80,12 @@ npm run build
 2. Click the extension icon in the Chrome toolbar.
 3. Click the gear icon to open settings.
 4. Optionally set:
+
 - Default Institution
 - Default Attending
 - Auto-submit delay
 - Cardiac auto-fill and 5E options
+
 5. Click `Save Settings`.
 
 ![Settings](assets/screenshots/02-settings.png)
@@ -101,6 +103,7 @@ npm run build
 1. Use `Previous`, `Next`, or `Jump to` to navigate.
 2. Review and adjust any field values before submission.
 3. Choose one action:
+
 - `Fill Form`: fills fields on the ACGME page only
 - `Submit`: fills then submits after configured delay
 - `Skip`: marks case as skipped and moves to next pending case

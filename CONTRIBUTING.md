@@ -3,14 +3,14 @@
 ## Prerequisites
 
 - Node.js `>=18`
-- npm (or Bun)
+- Bun
 - Chrome browser for manual verification
 
 ## Local setup
 
 ```bash
-npm install
-npm run build
+bun install
+bun run build
 ```
 
 Load `dist/` as an unpacked extension in `chrome://extensions`.
@@ -25,8 +25,8 @@ Load `dist/` as an unpacked extension in `chrome://extensions`.
 Recommended checks:
 
 ```bash
-npm run check
-npm run build
+bun run check
+bun run build
 ```
 
 ## Coding standards
@@ -41,8 +41,8 @@ npm run build
 ## Pull request checklist
 
 - [ ] Changes are scoped and explained
-- [ ] `npm run check` passes
-- [ ] `npm run build` passes
+- [ ] `bun run check` passes
+- [ ] `bun run build` passes
 - [ ] Any UX/API changes are reflected in docs
 - [ ] Compliance-related behavior/docs are updated when relevant
 - [ ] `CHANGELOG.md` is updated when needed

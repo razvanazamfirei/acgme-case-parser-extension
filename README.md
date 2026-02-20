@@ -1,7 +1,7 @@
 # ACGME Case Submitter Chrome Extension
 
 Standalone Chrome extension repository for uploading standardized case-parser
-output and auto-filling the ACGME Case Entry page:
+output and autofilling the ACGME Case Entry page:
 
 - `https://apps.acgme.org/ads/CaseLogs/CaseEntry/*`
 
@@ -34,8 +34,8 @@ Install from the Chrome Web Store listing (recommended for normal users).
 ### Unpacked (local build)
 
 ```bash
-npm install
-npm run build
+bun install
+bun run build
 ```
 
 Load in Chrome:
@@ -48,22 +48,22 @@ Load in Chrome:
 ## Quick Start (Development)
 
 ```bash
-npm install
-npm run build
+bun install
+bun run build
 ```
 
 ## Development
 
 ```bash
-npm run dev         # Vite dev server for popup iteration
-npm run build       # Production build
-npm run build:dev   # Unminified build with sourcemaps
-npm run clean
+bun run dev         # Vite dev server for popup iteration
+bun run build       # Production build
+bun run build:dev   # Unminified build with sourcemaps
+bun run clean
 
-npm run lint
-npm run lint:fix
-npm run format
-npm run check
+bun run lint
+bun run lint:fix
+bun run format
+bun run check
 ```
 
 If you prefer Bun, `bun run <script>` works with the same script names.
@@ -71,7 +71,7 @@ If you prefer Bun, `bun run <script>` works with the same script names.
 ## Packaging For Chrome Web Store
 
 ```bash
-npm run package:zip
+bun run package:zip
 ```
 
 This creates `acgme-case-submitter-v<version>.zip` at repo root.
@@ -105,7 +105,7 @@ This includes:
 - `ACGME_COMPLIANCE.md`: Non-affiliation, policy-aware usage, legal disclaimer
 - `CHANGELOG.md`: Release history
 - `USER_GUIDE.md`: End-user install and operation guide (PDF-friendly Markdown)
-- `CHROME_STORE_PUBLISHING_AND_USAGE_GUIDE.md`: Publishing and listing checklist
+- `RELEASING.md`: Version bump + tag + GitHub Release process
 - `CONTRIBUTING.md`: Contributor workflow and standards
 - `CODE_OF_CONDUCT.md`: Community behavior expectations
 - `SECURITY.md`: Vulnerability reporting process
@@ -124,4 +124,4 @@ This includes:
 
 ## License
 
-MIT. See `LICENSE`.
+Apache License 2.0. See `LICENSE`.
