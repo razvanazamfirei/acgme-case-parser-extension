@@ -106,6 +106,8 @@ This includes:
 - `CHANGELOG.md`: Release history
 - `USER_GUIDE.md`: End-user install and operation guide (PDF-friendly Markdown)
 - `RELEASING.md`: Version bump + tag + GitHub Release process
+- `wiki/`: Comprehensive GitHub Wiki source pages
+- `scripts/wiki/publish.sh`: Sync wiki source pages to GitHub Wiki
 - `CONTRIBUTING.md`: Contributor workflow and standards
 - `CODE_OF_CONDUCT.md`: Community behavior expectations
 - `SECURITY.md`: Vulnerability reporting process

@@ -8,6 +8,8 @@
 - `RELEASING.md` with a Bun-first release process
 - `scripts/release/bump.mjs` for `major`/`minor`/`patch` version bumps
 - `.github/workflows/release.yml` for tag-triggered GitHub Releases
+- Comprehensive wiki source pages in `wiki/`
+- `scripts/wiki/publish.sh` to sync repository wiki pages to GitHub Wiki
 
 ### Changed
 
