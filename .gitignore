@@ -4,3 +4,6 @@ dist/
 # Development
 node_modules/
 .DS_Store
+.idea/
+USER_GUIDE.pdf
+*.zip

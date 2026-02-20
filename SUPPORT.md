@@ -29,5 +29,5 @@ For vulnerabilities, follow `SECURITY.md` and use private reporting.
 ## Compliance questions
 
 - For policy interpretation, consult your institution compliance/legal team.
-- Project maintainers can explain technical behavior, but cannot provide legal
+- Project maintainers can explain technical behavior but cannot provide legal
   advice or guarantee policy compliance.

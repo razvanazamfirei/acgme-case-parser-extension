@@ -1,8 +1,8 @@
 # ACGME Case Submitter User Guide
 
-Version: `1.3.0`
+Version: `1.3.1`
 
-This guide is written in Markdown so it can be exported directly to PDF.
+This guide is written in Markdown, so it can be exported directly to PDF.
 
 ## 1. What this extension does
 
@@ -16,13 +16,13 @@ fill the ACGME Case Entry form on:
 - This extension is **not affiliated with, endorsed by, or sponsored by ACGME**.
 - You must use it only with authorized ADS credentials and institutional
   approval.
-- You are responsible for following:
+- You are responsible for the following:
   - `https://www.acgme.org/about/legal/terms-of-use`
   - `https://apps.acgme.org/ads/` (including ADS-specific policies)
 - ACGME Terms include restrictions on unauthorized access and use of automated
   tools to monitor/copy site content. Obtain institutional and/or ACGME
   approval before using automation features.
-- This guide is operational documentation, not legal advice.
+- This guide is the operational documentation, not legal advice.
 - No disclaimer can guarantee compliance by itself. Your account rights,
   institution policy, and ACGME terms control permitted use.
 - For repository-level compliance language, see `ACGME_COMPLIANCE.md`.
@@ -54,7 +54,7 @@ Optional columns:
 
 ### Option A: Install from Chrome Web Store (recommended)
 
-1. Open the extension listing in Chrome Web Store.
+1. Open the extension listing in the Chrome Web Store.
 2. Click `Add to Chrome`.
 3. Confirm installation.
 4. Pin the extension from the Chrome toolbar for quick access.
@@ -84,7 +84,7 @@ bun run build
 - Default Institution
 - Default Attending
 - Auto-submit delay
-- Cardiac auto-fill and 5E options
+- Cardiac autofill and 5E options
 
 5. Click `Save Settings`.
 
@@ -94,7 +94,7 @@ bun run build
 
 1. In the popup, click `Choose Excel File`.
 2. Select your `.xlsx`, `.xls`, or `.csv` file.
-3. Confirm the case counter appears and the first case loads.
+3. Confirm the case counter appears, and the first case loads.
 
 ![Upload](assets/screenshots/01-upload.png)
 
@@ -106,7 +106,7 @@ bun run build
 
 - `Fill Form`: fills fields on the ACGME page only
 - `Submit`: fills then submits after configured delay
-- `Skip`: marks case as skipped and moves to next pending case
+- `Skip`: marks the case as skipped and moves to next pending case.
 
 ![Case Review](assets/screenshots/03-review.png)
 
@@ -121,12 +121,12 @@ Use `START BEAST MODE` to auto-process all pending cases.
 Behavior:
 
 - Works through pending cases automatically
-- Pauses on validation/submission issues so you can correct and continue
+- Pauses on validation/submission issues so you can correct and continue.
 - Supports stop/resume from the same button
 
 ## 9. Troubleshooting
 
-### Popup says “Navigate to ACGME Case Entry page first”
+### Popup says, “Navigate to ACGME Case Entry page first.”
 
 - Make sure the active tab is on:
   `https://apps.acgme.org/ads/CaseLogs/CaseEntry/*`
@@ -150,7 +150,7 @@ Behavior:
 
 - Files are parsed locally in your browser popup.
 - Settings and session progress are stored in Chrome storage.
-- No external API calls or telemetry are used by the extension.
+- The extension uses no external API calls or telemetry.
 
 See `PRIVACY.md` for details.
 
@@ -162,5 +162,5 @@ Example with Pandoc:
 pandoc USER_GUIDE.md -o USER_GUIDE.pdf
 ```
 
-If you want embedded images in the PDF, run the command from repository root
+If you want embedded images in the PDF, run the command from the repository root 
 so relative image paths resolve correctly.

@@ -5,9 +5,9 @@
 Security updates are provided for the latest release line.
 
 | Version | Supported |
-| --- | --- |
-| 1.3.x | Yes |
-| <1.3.0 | No |
+|---------|-----------|
+| 1.3.x   | Yes       |
+| <1.3.0  | No        |
 
 ## Reporting a vulnerability
 

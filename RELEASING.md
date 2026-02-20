@@ -9,7 +9,7 @@ This repository uses Bun and GitHub tags to publish releases.
 
 ## Release flow
 
-1. Update local branch and changelog.
+1. Update the local branch and changelog.
 
 ```bash
 git checkout main
@@ -49,7 +49,7 @@ git push origin main
 bun run release:tag
 ```
 
-## What happens after tag push
+## What happens after a tag push
 
 GitHub Action `.github/workflows/release.yml` will:
 

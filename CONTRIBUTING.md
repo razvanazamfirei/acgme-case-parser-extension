@@ -31,7 +31,7 @@ bun run build
 
 ## Coding standards
 
-- Keep permission scope minimal.
+- Keep the permission scope minimal.
 - Do not add remote code execution or hidden telemetry.
 - Keep parser-extension interface compatibility documented in `INTERFACE.md`.
 - Update docs when behavior, settings, or data handling changes.
@@ -52,6 +52,6 @@ bun run build
 Open an issue with:
 
 - Steps to reproduce
-- Expected vs actual behavior
+- Expected vs. actual behavior
 - Sample input shape (no patient-identifiable data)
 - Browser version and extension version

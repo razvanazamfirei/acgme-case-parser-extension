@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e:*)",
+      "Bash(node:*)",
+      "Bash(identify:*)",
+      "Bash(rsvg-convert:*)",
+      "Bash(gh repo view:*)",
+      "Bash(perl:*)"
+    ]
+  }
+}

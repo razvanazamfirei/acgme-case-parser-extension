@@ -13,7 +13,7 @@ This document defines the application interface between:
 
 ## Input Spreadsheet Contract
 
-The extension reads the first sheet and maps columns by exact header name
+The extension reads the first sheet and maps columns by the exact header name 
 (case-insensitive).
 
 Required columns:
