@@ -55,6 +55,18 @@ export const Excel = {
         continue;
       }
 
+      let airwayStr = this.getString(row, colIndex["Airway Management"]);
+      let difficultAirway = "";
+      if (airwayStr) {
+        const airwayTokens = airwayStr.split(";").map((t) => t.trim());
+        if (airwayTokens.some((t) => t === "Difficult Airway")) {
+          difficultAirway = "Unanticipated";
+          airwayStr = airwayTokens
+            .filter((t) => t !== "Difficult Airway")
+            .join("; ");
+        }
+      }
+
       const caseData = {
         caseId: this.getString(row, colIndex["Case ID"]),
         date: this.formatDate(row[colIndex["Case Date"]]),
@@ -63,7 +75,8 @@ export const Excel = {
         comments: this.getString(row, colIndex["Original Procedure"]),
         asa: this.getString(row, colIndex["ASA Physical Status"]),
         anesthesia: this.getString(row, colIndex["Anesthesia Type"]),
-        airway: this.getString(row, colIndex["Airway Management"]),
+        airway: airwayStr,
+        difficultAirway: difficultAirway,
         procedureCategory: this.getString(row, colIndex["Procedure Category"]),
         vascularAccess: this.getString(
           row,

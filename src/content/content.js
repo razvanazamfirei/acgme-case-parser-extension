@@ -66,9 +66,14 @@ const PROCEDURE_CAT_MAP = {
   "Intracerebral Vascular (open)": "156687",
   "Intracerebral Nonvascular (open)": "156689",
   "Cesarean Delivery": "156692",
+  "Cesarean del": "156692", // Alias from case-parser output
   "Vaginal Delivery": "156690",
+  "Vaginal del": "156690", // Alias from case-parser output
   "Intrathoracic non-cardiac": "156683",
   "Other (procedure cat)": null, // Explicitly handled
+  // Unqualified categories — mapped to open/nonvascular defaults
+  "Intracerebral": "156689", // → Intracerebral Nonvascular (open)
+  "Procedures Major Vessels": "156684", // → Procedures on major vessels (open)
 };
 
 // Vascular access codes (matching Python tool output)

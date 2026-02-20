@@ -20,11 +20,13 @@
             </p>
           </div>
           <button
+            type="button"
             id="settingsToggle"
             class="bg-white/20 hover:bg-white/30 border-0 rounded-md p-1.5 cursor-pointer text-white flex items-center justify-center transition-colors"
             title="Settings"
           >
             <svg
+              aria-hidden="true"
               width="20px"
               height="20px"
               viewBox="0 0 24 24"
@@ -98,6 +100,7 @@
               Auto-fill cardiac case extras
               <span class="info-tooltip">
                 <svg
+              aria-hidden="true"
                   class="info-icon"
                   width="14"
                   height="14"
@@ -149,12 +152,14 @@
 
         <div class="flex gap-2 pt-2">
           <button
+            type="button"
             id="clearSessionBtn"
             class="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2 border-0 rounded-md text-sm font-medium cursor-pointer transition-all bg-yellow-400 text-yellow-900 hover:bg-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Clear Session
           </button>
           <button
+            type="button"
             id="saveSettingsBtn"
             class="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2 border-0 rounded-md text-sm font-medium cursor-pointer transition-all bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -172,6 +177,7 @@
               class="mx-auto w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center"
             >
               <svg
+              aria-hidden="true"
                 class="w-8 h-8 text-primary-600"
                 fill="none"
                 stroke="currentColor"
@@ -193,6 +199,7 @@
             </div>
             <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
             <button
+              type="button"
               id="uploadBtn"
               class="inline-flex items-center justify-center gap-1.5 px-4 py-2 border-0 rounded-md text-sm font-medium cursor-pointer transition-all bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -221,6 +228,7 @@
 
           <div class="flex items-center gap-3">
             <button
+              type="button"
               id="prevBtn"
               class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border-0 rounded-md text-sm font-medium cursor-pointer transition-all bg-gray-200 text-gray-600 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -230,6 +238,7 @@
               <span id="currentIndex">0</span> / <span id="totalCount">0</span>
             </div>
             <button
+              type="button"
               id="nextBtn"
               class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border-0 rounded-md text-sm font-medium cursor-pointer transition-all bg-gray-200 text-gray-600 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -280,6 +289,7 @@
                 Age
                 <span class="info-tooltip">
                   <svg
+              aria-hidden="true"
                     class="info-icon"
                     width="14"
                     height="14"
@@ -352,6 +362,7 @@
                 Procedure Category
                 <span class="info-tooltip">
                   <svg
+              aria-hidden="true"
                     class="info-icon"
                     width="14"
                     height="14"
@@ -385,11 +396,17 @@
                 <option value="Intrathoracic non-cardiac">Intrathoracic</option>
                 <option value="Cardiac with CPB">Cardiac with CPB</option>
                 <option value="Cardiac without CPB">Cardiac without CPB</option>
+                <option value="Procedures Major Vessels">
+                  Major Vessels (open)*
+                </option>
                 <option value="Procedures on major vessels (open)">
                   Major Vessels (open)
                 </option>
                 <option value="Procedures on major vessels (endovascular)">
                   Major Vessels (endo)
+                </option>
+                <option value="Intracerebral">
+                  Intracerebral Nonvasc*
                 </option>
                 <option value="Intracerebral Vascular (open)">
                   Intracerebral Vascular
@@ -400,7 +417,7 @@
                 <option value="Intracerebral (endovascular)">
                   Intracerebral (endo)
                 </option>
-                <option value="Cesarean del">Cesarean</option>
+                <option value="Cesarean Delivery">Cesarean Delivery</option>
                 <option value="Vaginal Delivery">Vaginal Delivery</option>
               </select>
             </div>
@@ -431,10 +448,10 @@
                 <input
                   type="checkbox"
                   name="airway"
-                  value="LMA"
+                  value="Supraglottic Airway"
                   class="rounded"
                 />
-                <span>LMA</span>
+                <span>Supraglottic</span>
               </label>
               <label class="checkbox-label">
                 <input
@@ -566,6 +583,7 @@
                 Difficult Airway
                 <span class="info-tooltip">
                   <svg
+              aria-hidden="true"
                     class="info-icon"
                     width="14"
                     height="14"
@@ -666,6 +684,7 @@
           <!-- Bottom Navigation -->
           <div class="flex items-center gap-3 py-3 border-t border-gray-200">
             <button
+              type="button"
               id="prevBtnBottom"
               class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border-0 rounded-md text-sm font-medium cursor-pointer transition-all bg-gray-200 text-gray-600 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -675,6 +694,7 @@
               <span id="currentIndexBottom">0</span> / <span id="totalCountBottom">0</span>
             </div>
             <button
+              type="button"
               id="nextBtnBottom"
               class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border-0 rounded-md text-sm font-medium cursor-pointer transition-all bg-gray-200 text-gray-600 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -689,6 +709,7 @@
           >
             <div class="flex items-start gap-2">
               <svg
+              aria-hidden="true"
                 class="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5"
                 fill="currentColor"
                 viewBox="0 0 20 20"
@@ -710,18 +731,21 @@
 
           <div class="flex gap-2 pt-2">
             <button
+              type="button"
               id="skipBtn"
               class="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2 border-0 rounded-md text-sm font-medium cursor-pointer transition-all bg-yellow-400 text-yellow-900 hover:bg-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Skip
             </button>
             <button
+              type="button"
               id="fillBtn"
               class="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2 border-0 rounded-md text-sm font-medium cursor-pointer transition-all bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Fill Form
             </button>
             <button
+              type="button"
               id="fillSubmitBtn"
               class="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2 border-0 rounded-md text-sm font-medium cursor-pointer transition-all bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
               title="Fill and submit case to ACGME"
@@ -733,6 +757,7 @@
           <!-- BEAST Mode -->
           <div class="mt-3 pt-3 border-t border-gray-200">
             <button
+              type="button"
               id="beastModeBtn"
               class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 border-2 border-red-500 rounded-md text-sm font-bold cursor-pointer transition-all bg-red-500 text-white hover:bg-red-600 hover:border-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
               title="Automatically fill and submit all pending cases"
