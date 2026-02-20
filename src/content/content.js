@@ -72,8 +72,8 @@ const PROCEDURE_CAT_MAP = {
   "Intrathoracic non-cardiac": "156683",
   "Other (procedure cat)": null, // Explicitly handled
   // Unqualified categories — mapped to open/nonvascular defaults
-  "Intracerebral": "156689", // → Intracerebral Nonvascular (open)
-  "Procedures Major Vessels": "156684", // → Procedures on major vessels (open)
+  Intracerebral: "156689", // -> Intracerebral Nonvascular (open)
+  "Procedures Major Vessels": "156684", // -> Procedures on major vessels (open)
 };
 
 // Vascular access codes (matching Python tool output)

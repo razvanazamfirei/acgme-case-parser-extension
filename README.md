@@ -14,7 +14,13 @@ output and auto-filling the ACGME Case Entry page:
 - Optional delayed auto-submit after fill.
 - Session persistence (`chrome.storage.local`) and settings sync (`chrome.storage.sync`).
 
-## Quick Start
+## Installation
+
+### Chrome Web Store
+
+Install from the Chrome Web Store listing (recommended for normal users).
+
+### Unpacked (local build)
 
 ```bash
 npm install
@@ -27,6 +33,13 @@ Load in Chrome:
 2. Enable Developer mode.
 3. Click Load unpacked.
 4. Select `dist/`.
+
+## Quick Start (Development)
+
+```bash
+npm install
+npm run build
+```
 
 ## Development
 
@@ -71,7 +84,7 @@ This includes:
 - popup-to-content message contract,
 - compatibility expectations with parser output.
 
-## Documentation
+## Documentation and Metadata
 
 - `BUILD.md`: Build and release pipeline
 - `ARCHITECTURE.md`: Module boundaries and data flow
@@ -79,3 +92,24 @@ This includes:
 - `SETTINGS.md`: Runtime options
 - `PRIVACY.md`: Data handling and privacy statement
 - `CHANGELOG.md`: Release history
+- `USER_GUIDE.md`: End-user install and operation guide (PDF-friendly Markdown)
+- `CHROME_STORE_PUBLISHING_AND_USAGE_GUIDE.md`: Publishing and listing checklist
+- `CONTRIBUTING.md`: Contributor workflow and standards
+- `CODE_OF_CONDUCT.md`: Community behavior expectations
+- `SECURITY.md`: Vulnerability reporting process
+- `SUPPORT.md`: Support and troubleshooting channels
+- `LICENSE`: Project license
+
+## Screenshots
+
+- Full guide screenshots: `assets/screenshots/`
+- Chrome Web Store ready images (`640x400`): `assets/screenshots/store-*.png`
+
+## Support and Security
+
+- Support: see `SUPPORT.md`
+- Security reporting: see `SECURITY.md`
+
+## License
+
+MIT. See `LICENSE`.
