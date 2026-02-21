@@ -18,7 +18,7 @@
 On first launch the extension displays an **Authorization Required** modal. You must:
 
 1. Select your primary UPHS institution (sets the default for form filling).
-2. Check the confirmation box affirming you are a UPHS anesthesia resident with authorized ADS access.
+2. Check both confirmation boxes: one affirming your identity as an authorized UPHS anesthesia resident, and one accepting responsibility for verifying the accuracy of submitted case data.
 3. Click **Confirm Access**.
 
 This confirmation is saved and will not be shown again on this device.

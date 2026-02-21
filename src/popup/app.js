@@ -436,7 +436,7 @@ const Help = {
   toggle() {
     // Close settings if open
     const settingsSection = UI.get(DOM.settingsSection);
-    if (!settingsSection.classList.contains("hidden")) {
+    if (settingsSection && !settingsSection.classList.contains("hidden")) {
       UI.hideSection(DOM.settingsSection);
     }
     UI.toggleSection(DOM.helpSection);
@@ -687,7 +687,7 @@ const App = {
 
       const confirmed = await Storage.isConfirmed();
       if (!confirmed) {
-        await Confirmation.show();
+        Confirmation.show();
         return;
       }
 

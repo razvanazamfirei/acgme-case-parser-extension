@@ -6,7 +6,7 @@ The extension requests only two permissions:
 
 | Permission | Purpose |
 |---|---|
-| Storage | Saves your settings and current session progress locally |
+| Storage | Saves your settings (synced via Chrome) and current session progress (local to this device) |
 | Access to `apps.acgme.org/ads/CaseLogs/CaseEntry/` | Limits the extension to the ADS Case Entry page only — it does not run on any other site |
 
 ## Data Handling
