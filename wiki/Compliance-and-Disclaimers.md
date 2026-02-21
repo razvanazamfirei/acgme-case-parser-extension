@@ -8,11 +8,10 @@ This extension is an independent project and is **not affiliated with, endorsed 
 
 ## Intended Audience
 
-This tool is intended exclusively for anesthesia residents at the University of Pennsylvania Health System (UPHS). On first launch, users must confirm:
+This tool is intended exclusively for anesthesia residents at the University of Pennsylvania Health System (UPHS). On first launch, users must check two confirmation boxes in the **Authorization Required** modal:
 
-- They are an anesthesia resident at UPHS.
-- They have authorized ACGME ADS credentials.
-- The tool will be used only for their own case log submissions.
+1. A confirmation that the user is an anesthesia resident at UPHS with authorized ACGME ADS access, and that they will use the tool only for their own case log submissions in accordance with program policies and ACGME Terms of Use.
+2. A confirmation that the user is solely responsible for verifying the accuracy of all submitted case data, including data submitted in bulk via BEAST Mode, and that they will not use BEAST Mode without verifying case mappings on a sample of cases first.
 
 This confirmation is stored in Chrome sync storage. Users who decline cannot proceed.
 

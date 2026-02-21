@@ -97,7 +97,7 @@ If no match is found, the case-level attending field is left empty. If a Default
 
 Fields that accept multiple values use **semicolon** delimiters. Whitespace around delimiters is stripped.
 
-```
+```text
 ETT; Video Laryngoscope; Difficult Airway
 Arterial Catheter; Central Venous Catheter; Ultrasound Guided
 TEE; Neuromonitoring
@@ -105,19 +105,19 @@ TEE; Neuromonitoring
 
 ## Minimal Valid Example
 
-```
+```csv
 Case ID,Case Date,Supervisor,Age,Original Procedure,ASA Physical Status,Anesthesia Type,Procedure Category
-12345,1/15/2026,SMITH JOHN,d,Appendectomy,2,GA,Other (procedure cat)
-12346,1/16/2026,DOE JANE,e,CABG,3,GA,Cardiac with CPB
+12345,1/15/2026,"SMITH, JOHN",d,Appendectomy,2,GA,Other (procedure cat)
+12346,1/16/2026,"DOE, JANE",e,CABG,3,GA,Cardiac with CPB
 ```
 
 ## Full Example with Optional Columns
 
-```
+```csv
 Case ID,Case Date,Supervisor,Age,Original Procedure,ASA Physical Status,Anesthesia Type,Procedure Category,Airway Management,Specialized Vascular Access,Specialized Monitoring Techniques
-12345,1/15/2026,SMITH JOHN,d,Appendectomy,2,GA,Other (procedure cat),ETT; Direct Laryngoscope,,
-12346,1/16/2026,DOE JANE,e,CABG,3,GA,Cardiac with CPB,ETT; Difficult Airway,Arterial Catheter; Central Venous Catheter; PA Catheter; Ultrasound Guided,TEE
-12347,1/17/2026,JONES BOB,a,VP Shunt,1,GA,Intracerebral Nonvascular (open),ETT; Video Laryngoscope,,Neuromonitoring
+12345,1/15/2026,"SMITH, JOHN",d,Appendectomy,2,GA,Other (procedure cat),ETT; Direct Laryngoscope,,
+12346,1/16/2026,"DOE, JANE",e,CABG,3,GA,Cardiac with CPB,ETT; Difficult Airway,Arterial Catheter; Central Venous Catheter; PA Catheter; Ultrasound Guided,TEE
+12347,1/17/2026,"JONES, BOB",a,VP Shunt,1,GA,Intracerebral Nonvascular (open),ETT; Video Laryngoscope,,Neuromonitoring
 ```
 
 ## Parser Compatibility

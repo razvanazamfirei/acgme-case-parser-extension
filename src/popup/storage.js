@@ -99,4 +99,13 @@ export const Storage = {
       throw error;
     }
   },
+
+  async clearConfirmed() {
+    try {
+      await chrome.storage.sync.remove(STORAGE_KEYS.confirmed);
+    } catch (error) {
+      console.error("Error clearing confirmation:", error);
+      throw error;
+    }
+  },
 };

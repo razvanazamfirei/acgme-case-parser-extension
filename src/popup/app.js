@@ -464,9 +464,10 @@ const Confirmation = {
     accuracyCheckbox?.addEventListener("change", updateConfirmBtn);
 
     confirmBtn?.addEventListener("click", async () => {
-      if (!UI.get(DOM.confirmCheckbox)?.checked) return;
-      if (!UI.get(DOM.confirmAccuracyCheckbox)?.checked) return;
+      if (!checkbox?.checked) return;
+      if (!accuracyCheckbox?.checked) return;
 
+      confirmBtn.disabled = true;
       try {
         // Save institution from confirmation modal if selected
         const institutionEl = UI.get(DOM.confirmInstitution);
@@ -483,6 +484,7 @@ const Confirmation = {
       } catch (error) {
         console.error("Error confirming:", error);
         UI.showStatus("Error saving confirmation. Please try again.", "error");
+        updateConfirmBtn();
       }
     });
 

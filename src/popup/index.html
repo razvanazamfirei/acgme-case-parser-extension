@@ -10,11 +10,14 @@
     <!-- Confirmation Modal (shown on first run) -->
     <div
       id="confirmationModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="authorizationHeading"
       class="hidden absolute inset-0 bg-white z-50 flex flex-col overflow-y-auto"
     >
       <div class="p-5 space-y-4">
         <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <h2 class="text-base font-bold text-amber-900">
+          <h2 id="authorizationHeading" class="text-base font-bold text-amber-900">
             Authorization Required
           </h2>
           <p class="text-sm text-amber-800 mt-1">
@@ -139,6 +142,7 @@
           <button
             type="button"
             id="helpToggle"
+            aria-label="Help and format reference"
             class="hover:bg-gray-100 border border-gray-200 rounded-md p-1.5 cursor-pointer text-gray-500 hover:text-gray-700 flex items-center justify-center transition-colors"
             title="Help & Format Reference"
           >
@@ -599,6 +603,7 @@
                 <option value="3">3</option>
                 <option value="4">4</option>
                 <option value="5">5</option>
+                <option value="6">6</option>
                 <option value="1E">1E</option>
                 <option value="2E">2E</option>
                 <option value="3E">3E</option>
