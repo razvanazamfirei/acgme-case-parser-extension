@@ -59,16 +59,7 @@ The help panel (question mark icon) shows a quick reference for accepted column 
 3. Use **Fill Form** first to validate mappings.
 4. Use **Submit** or **BEAST MODE** only after confirming mapping quality.
 
-## 7. Where Behavior Lives in Code
-
-- Popup wiring/state: `src/popup/app.js`, `src/popup/state.js`
-- Spreadsheet parsing: `src/popup/excel.js`
-- Case UI population/readback: `src/popup/form.js`
-- ADS bridge messaging: `src/popup/acgme.js`
-- On-page filling/submission logic: `src/content/content.js`
-- Settings persistence: `src/popup/settings.js`, `src/popup/storage.js`
-
-## 8. Safety and Compliance Reminders
+## 7. Safety and Compliance Reminders
 
 - This tool is not affiliated with ACGME.
 - Use only with authorized ADS credentials and institutional approval.

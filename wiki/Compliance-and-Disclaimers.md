@@ -36,24 +36,9 @@ ACGME terms include restrictions around automated means in certain contexts. Bec
 
 If approval is unclear, do not use bulk automation features.
 
-## Copy-Ready Disclaimer Block
-
-Use this block in public docs/listings:
-
-> This tool is intended only for authorized ADS users and policy-compliant, user-directed case-entry workflows. It does not bypass access controls, is not a scraping/mirroring tool, and is not affiliated with ACGME.
-
 ## Legal Scope Limits
 
 - This documentation is not legal advice.
 - No documentation statement can guarantee compliance by itself.
 - Compliance responsibility remains with users and their institutions.
 
-## Documentation Placement Checklist
-
-Include compliance language in:
-
-- README
-- User Guide
-- Chrome Web Store description/notes
-- Privacy page
-- Wiki Home and compliance page

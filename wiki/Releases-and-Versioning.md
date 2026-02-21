@@ -1,67 +1,20 @@
-# Releases and Versioning
+# Releases
 
-This project uses SemVer and Bun-based release automation.
+This extension uses semantic versioning (`MAJOR.MINOR.PATCH`).
 
-## Version Sources of Truth
+## Finding the Current Version
 
-- `package.json`
-- `manifest.json`
+The version number is displayed in the footer of the extension popup.
 
-Both must match release tag `vX.Y.Z`.
+## Release Notes
 
-## Standard Release Steps
+Full release notes and download history are available on the [GitHub Releases page](https://github.com/razvanazamfirei/acgme-case-parser-extension/releases).
 
-1. Update local branch:
+Each release includes:
 
-```bash
-git checkout main
-git pull --ff-only
-```
+- A summary of changes
+- A packaged `.zip` artifact
 
-2. Bump version:
+## Staying Up to Date
 
-```bash
-bun run bump:patch
-```
-
-3. Run checks and package:
-
-```bash
-bun run release:prepare
-```
-
-4. Commit and push bump:
-
-```bash
-git add package.json manifest.json src/popup/index.html USER_GUIDE.md CHANGELOG.md bun.lock
-git commit -m "release: vX.Y.Z"
-git push origin main
-```
-
-5. Tag and push release:
-
-```bash
-bun run release:tag
-```
-
-## Automated GitHub Release
-
-Workflow: `.github/workflows/release.yml`
-
-On tag push (`v*.*.*`), GitHub Actions:
-
-1. Validates tag/package/manifest version alignment
-2. Runs `bun run check`
-3. Builds zip package
-4. Publishes GitHub Release with generated notes and artifact
-
-## Bump Utility
-
-Script: `scripts/release/bump.mjs`
-
-It updates:
-
-- `package.json`
-- `manifest.json`
-- `src/popup/index.html` footer version
-- `USER_GUIDE.md` version line
+If installed from the Chrome Web Store, Chrome updates the extension automatically. If you installed from a `.zip`, check the releases page for new versions and reinstall when a new version is available.

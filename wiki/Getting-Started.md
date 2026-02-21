@@ -6,34 +6,12 @@
 - Authorized access to ADS Case Entry
 - A standardized input file in `.xlsx`, `.xls`, or `.csv`
 
-## Install Option A: Chrome Web Store (Recommended)
+## Install from Chrome Web Store
 
 1. Open the extension listing in the Chrome Web Store.
 2. Click **Add to Chrome**.
 3. Confirm installation.
 4. Pin the extension from the Chrome toolbar.
-
-## Install Option B: Unpacked Build
-
-1. Clone this repository.
-2. Install dependencies and build:
-
-```bash
-bun install
-bun run build
-```
-
-3. Open `chrome://extensions`.
-4. Enable **Developer mode**.
-5. Click **Load unpacked**.
-6. Select the repo `dist/` directory.
-
-## Requirements
-
-- UPHS anesthesia residency enrollment
-- Authorized ACGME ADS credentials
-- Google Chrome (current stable)
-- A standardized input file in `.xlsx`, `.xls`, or `.csv`
 
 ## First Run: Authorization Confirmation
 
@@ -43,7 +21,7 @@ On first launch the extension displays an **Authorization Required** modal. You 
 2. Check the confirmation box affirming you are a UPHS anesthesia resident with authorized ADS access.
 3. Click **Confirm Access**.
 
-This is stored in Chrome sync storage and will not be shown again on this device.
+This confirmation is saved and will not be shown again on this device.
 
 If you decline, the extension does not proceed. Close the popup to exit.
 
@@ -57,7 +35,7 @@ If you decline, the extension does not proceed. Close the popup to exit.
 
 ![Settings](https://raw.githubusercontent.com/razvanazamfirei/acgme-case-parser-extension/main/docs/screenshots/02-settings.png)
 
-## File Contract
+## Spreadsheet Format
 
 Required columns (all eight must be present):
 

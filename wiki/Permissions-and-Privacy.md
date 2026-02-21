@@ -1,15 +1,13 @@
 # Permissions and Privacy
 
-## Manifest Permissions
+## Permissions
 
-`manifest.json` defines a least-privilege policy.
+The extension requests only two permissions:
 
 | Permission | Purpose |
 |---|---|
-| `storage` | Persist settings and current session progress locally/synced |
-| Host: `https://apps.acgme.org/ads/CaseLogs/CaseEntry/*` | Restrict content script injection to ADS Case Entry only |
-
-No `activeTab`, no `scripting`, no broad host patterns.
+| Storage | Saves your settings and current session progress locally |
+| Access to `apps.acgme.org/ads/CaseLogs/CaseEntry/` | Limits the extension to the ADS Case Entry page only — it does not run on any other site |
 
 ## Data Handling
 
@@ -32,12 +30,5 @@ No `activeTab`, no `scripting`, no broad host patterns.
 
 ## Security Notes
 
-- Manifest V3 extension model
-- `content_security_policy` restricts extension pages to local scripts
-- Content script runs only on approved ADS route
-
-## Reference Documents
-
-- `PRIVACY.md`
-- `SECURITY.md`
-- `manifest.json`
+- The extension only runs on the ACGME ADS Case Entry page.
+- No data leaves your browser.

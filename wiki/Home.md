@@ -1,6 +1,6 @@
 # ACGME Case Submitter Wiki
 
-Use this wiki as the canonical operator handbook for publishing, compliance, and day-to-day usage of the ACGME Case Submitter Chrome extension.
+This wiki covers installation, usage, input format, settings, privacy, and compliance for the ACGME Case Submitter Chrome extension.
 
 ## Single Purpose (Policy Statement)
 
@@ -18,11 +18,10 @@ This extension is intended **only** for anesthesia residents at the University o
 - [User Guide](User-Guide)
 - [Input Format Reference](Input-Format)
 - [Settings Reference](Settings-Reference)
-- [Chrome Web Store Publishing](Chrome-Web-Store-Publishing)
 - [Permissions and Privacy](Permissions-and-Privacy)
 - [Compliance and Disclaimers](Compliance-and-Disclaimers)
-- [Architecture and Interface](Architecture-and-Interface)
-- [Releases and Versioning](Releases-and-Versioning)
+- [How It Works](Architecture-and-Interface)
+- [Releases](Releases-and-Versioning)
 - [Troubleshooting](Troubleshooting)
 
 ## Compliance Snapshot
@@ -37,15 +36,3 @@ This extension is intended **only** for anesthesia residents at the University o
 
 ![Extension review screen](https://raw.githubusercontent.com/razvanazamfirei/acgme-case-parser-extension/main/docs/screenshots/03-review.png)
 
-## Repository Sources
-
-The wiki content is sourced from these repo docs:
-
-- `README.md`
-- `USER_GUIDE.md`
-- `ACGME_COMPLIANCE.md`
-- `PRIVACY.md`
-- `SETTINGS.md`
-- `INTERFACE.md`
-- `ARCHITECTURE.md`
-- `RELEASING.md`

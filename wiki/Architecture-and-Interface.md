@@ -1,56 +1,30 @@
-# Architecture and Interface
+# How It Works
 
-## Runtime Surfaces
+## Overview
 
-1. Popup app (`src/popup/*`)
-2. Content script (`src/content/content.js`)
+The extension has two parts: a **popup** (the panel that opens when you click the extension icon) and a **page script** that runs on the ACGME ADS Case Entry page.
 
-The popup handles import, state, and user actions. The content script writes to ADS form controls and submits when requested.
-
-## Module Map
-
-### Popup modules
-
-- `src/popup/app.js`: bootstrap and event wiring
-- `src/popup/excel.js`: spreadsheet parsing and normalization
-- `src/popup/state.js`: in-memory session state
-- `src/popup/storage.js`: storage read/write wrappers
-- `src/popup/form.js`: popup form synchronization/validation
-- `src/popup/navigation.js`: case navigation/counters
-- `src/popup/settings.js`: settings load/save
-- `src/popup/acgme.js`: messaging bridge to content script
-- `src/popup/ui.js`: status and reusable UI helpers
-
-### Content module
-
-- `src/content/content.js`: field mapping, fill execution, submit action, response payloads
+The popup handles file import, case review, and navigation. The page script reads the form fields on the ADS page and fills them in when you trigger an action.
 
 ## Data Flow
 
-1. Upload file in popup
-2. Parse rows to normalized case objects
-3. Navigate/review case in popup
-4. Send `fillCase` message to content script
-5. Apply form values on ADS page
-6. Optionally submit case
-7. Return result and update local status
+1. You upload a spreadsheet in the popup.
+2. The extension parses and normalizes each row into a case record.
+3. You review cases one at a time in the popup.
+4. When you click **Fill Form** or **Submit**, the popup sends the case data to the page script running on the ADS tab.
+5. The page script writes values into the ADS form fields.
+6. Optionally, the case is submitted; the result is returned and the case status is updated in the popup.
 
-## Input Contract
+All data stays in your browser. Nothing is sent to any external server.
 
-Full column definitions, accepted value sets, date formats, multi-value field syntax, and annotated examples are in the [Input Format Reference](Input-Format).
+## Input Format
 
-Summary of required columns:
+For the column names, accepted values, date formats, and multi-value field syntax, see the [Input Format Reference](Input-Format).
+
+Required columns:
 
 - `Case ID` · `Case Date` · `Supervisor` · `Age` · `Original Procedure` · `ASA Physical Status` · `Anesthesia Type` · `Procedure Category`
 
-Optional columns (semicolon-delimited):
+Optional columns (semicolon-delimited for multi-value fields):
 
 - `Airway Management` · `Specialized Vascular Access` · `Specialized Monitoring Techniques`
-
-## Message API
-
-- `fillCase`
-- `submitCase`
-- `getAttendingOptions`
-
-Request/response payloads and accepted enums are specified in `INTERFACE.md` and summarized in [Input Format Reference](Input-Format).
