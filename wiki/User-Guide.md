@@ -2,7 +2,7 @@
 
 ## 0. First Run: Authorization Confirmation
 
-On first launch you will see an **Authorization Required** modal. Select your primary UPHS institution, check the confirmation box, and click **Confirm Access**. This is shown once and stored in Chrome sync storage.
+On first launch you will see an **Authorization Required** modal. Select your primary UPHS institution, check both confirmation boxes (identity and case accuracy responsibility), and click **Confirm Access**. This is shown once and stored in Chrome sync storage.
 
 ## 1. Open ADS Case Entry
 

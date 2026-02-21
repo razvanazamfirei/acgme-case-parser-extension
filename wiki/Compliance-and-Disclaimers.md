@@ -12,7 +12,7 @@ This tool is intended exclusively for anesthesia residents at the University of 
 
 - They are an anesthesia resident at UPHS.
 - They have authorized ACGME ADS credentials.
-- They will use the tool only for their own case log submissions.
+- The tool will be used only for their own case log submissions.
 
 This confirmation is stored in Chrome sync storage. Users who decline cannot proceed.
 

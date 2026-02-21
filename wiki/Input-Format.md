@@ -64,7 +64,7 @@ Exact canonical values (case-insensitive match):
 | `Procedures on major vessels (open)` | Open vascular surgery |
 | `Procedures on major vessels (endovascular)` | Endovascular/EVAR/TAVR |
 | `Intracerebral Vascular (open)` | Open intracranial vascular |
-| `Intracerebral Nonvascular (open)` | Open intracranial non-vascular |
+| `Intracerebral Nonvascular (open)` | Open intracranial nonvascular |
 | `Intracerebral (endovascular)` | Neuro-interventional |
 | `Cesarean Delivery` | C-section |
 | `Vaginal Delivery` | Vaginal obstetric delivery |

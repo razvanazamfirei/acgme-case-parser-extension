@@ -444,7 +444,7 @@ const Help = {
 };
 
 const Confirmation = {
-  async show() {
+  show() {
     UI.showSection(DOM.confirmationModal);
   },
 
