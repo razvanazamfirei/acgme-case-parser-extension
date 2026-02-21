@@ -78,7 +78,7 @@ Legacy alias: `Procedures Major Vessels` is accepted as an alias for `Procedures
 The parser handles three input types:
 
 1. **Formatted string** `M/D/YYYY` or `MM/DD/YYYY` — passed through as-is.
-2. **Excel serial number** (numeric) — converted using Excel epoch (1900-01-01 = day 1).
+2. **Excel serial number** (numeric) — interpreted using Excel’s 1900 date system (including its historical leap-year behavior; internally, serial `25569` is treated as `1970-01-01`).
 3. **Any parseable date string** — parsed by JavaScript `Date` constructor.
 
 Output is always `M/D/YYYY`.

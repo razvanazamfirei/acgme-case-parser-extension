@@ -483,7 +483,17 @@ const Confirmation = {
         EventHandlers.register();
       } catch (error) {
         console.error("Error confirming:", error);
-        UI.showStatus("Error saving confirmation. Please try again.", "error");
+        const modal = UI.get(DOM.confirmationModal);
+        if (modal) {
+          let errorEl = modal.querySelector('[data-role="confirmation-error"]');
+          if (!errorEl) {
+            errorEl = document.createElement("div");
+            errorEl.setAttribute("data-role", "confirmation-error");
+            errorEl.className = "mt-2 text-sm text-red-600";
+            modal.appendChild(errorEl);
+          }
+          errorEl.textContent = "Error saving confirmation. Please try again.";
+        }
         updateConfirmBtn();
       }
     });
@@ -680,6 +690,17 @@ const App = {
   async init() {
     try {
       await Storage.loadSettings();
+
+      // Normalize legacy empty defaultInstitution values and persist the fix
+      if (!State.settings || !State.settings.defaultInstitution) {
+        if (!State.settings) {
+          State.settings = {};
+        }
+        State.settings.defaultInstitution = "HUP";
+        if (typeof Storage.saveSettings === "function") {
+          await Storage.saveSettings(State.settings);
+        }
+      }
       Settings.applyToUI();
 
       // Register confirmation handlers early regardless of confirmation state

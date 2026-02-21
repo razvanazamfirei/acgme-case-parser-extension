@@ -21,7 +21,7 @@ On first launch the extension displays an **Authorization Required** modal. You 
 2. Check both confirmation boxes: one affirming your identity as an authorized UPHS anesthesia resident, and one accepting responsibility for verifying the accuracy of submitted case data.
 3. Click **Confirm Access**.
 
-This confirmation is saved and will not be shown again on this device.
+This confirmation is saved to your Chrome profile and will not be shown again in Chrome where you're signed in with sync enabled.
 
 If you decline, the extension does not proceed. Close the popup to exit.
 
