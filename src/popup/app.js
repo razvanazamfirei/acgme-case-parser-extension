@@ -432,6 +432,66 @@ const Session = {
   },
 };
 
+const Help = {
+  toggle() {
+    // Close settings if open
+    const settingsSection = UI.get(DOM.settingsSection);
+    if (!settingsSection.classList.contains("hidden")) {
+      UI.hideSection(DOM.settingsSection);
+    }
+    UI.toggleSection(DOM.helpSection);
+  },
+};
+
+const Confirmation = {
+  async show() {
+    UI.showSection(DOM.confirmationModal);
+  },
+
+  registerHandlers() {
+    const checkbox = UI.get(DOM.confirmCheckbox);
+    const accuracyCheckbox = UI.get(DOM.confirmAccuracyCheckbox);
+    const confirmBtn = UI.get(DOM.confirmBtn);
+    const declineBtn = UI.get(DOM.declineBtn);
+
+    const updateConfirmBtn = () => {
+      if (confirmBtn) {
+        confirmBtn.disabled = !(checkbox?.checked && accuracyCheckbox?.checked);
+      }
+    };
+
+    checkbox?.addEventListener("change", updateConfirmBtn);
+    accuracyCheckbox?.addEventListener("change", updateConfirmBtn);
+
+    confirmBtn?.addEventListener("click", async () => {
+      if (!UI.get(DOM.confirmCheckbox)?.checked) return;
+      if (!UI.get(DOM.confirmAccuracyCheckbox)?.checked) return;
+
+      try {
+        // Save institution from confirmation modal if selected
+        const institutionEl = UI.get(DOM.confirmInstitution);
+        if (institutionEl?.value) {
+          State.settings.defaultInstitution = institutionEl.value;
+          await Storage.saveSettings(State.settings);
+          Settings.applyToUI();
+        }
+
+        await Storage.setConfirmed();
+        UI.hideSection(DOM.confirmationModal);
+        await Session.restore();
+        EventHandlers.register();
+      } catch (error) {
+        console.error("Error confirming:", error);
+        UI.showStatus("Error saving confirmation. Please try again.", "error");
+      }
+    });
+
+    declineBtn?.addEventListener("click", () => {
+      UI.showSection(DOM.declineMessage);
+    });
+  },
+};
+
 const EventHandlers = {
   register() {
     const addListener = (id, event, handler) => {
@@ -547,8 +607,17 @@ const EventHandlers = {
       }
     });
 
-    // Settings
-    addListener(DOM.settingsToggle, "click", () => Settings.toggle());
+    // Settings - close help if open
+    addListener(DOM.settingsToggle, "click", () => {
+      const helpSection = UI.get(DOM.helpSection);
+      if (!helpSection.classList.contains("hidden")) {
+        UI.hideSection(DOM.helpSection);
+      }
+      Settings.toggle();
+    });
+
+    // Help
+    addListener(DOM.helpToggle, "click", () => Help.toggle());
     addListener(DOM.settingSubmitDelay, "input", (e) => {
       UI.get(DOM.submitDelayValue).textContent = `${e.target.value}s`;
     });
@@ -610,6 +679,16 @@ const App = {
     try {
       await Storage.loadSettings();
       Settings.applyToUI();
+
+      // Register confirmation handlers early regardless of confirmation state
+      Confirmation.registerHandlers();
+
+      const confirmed = await Storage.isConfirmed();
+      if (!confirmed) {
+        await Confirmation.show();
+        return;
+      }
+
       await Session.restore();
       EventHandlers.register();
       if (process.env.NODE_ENV === "development") {

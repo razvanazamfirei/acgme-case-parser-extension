@@ -35,18 +35,17 @@ The popup handles import, state, and user actions. The content script writes to 
 6. Optionally submit case
 7. Return result and update local status
 
-## Input Contract (Required Columns)
+## Input Contract
 
-- `Case ID`
-- `Case Date`
-- `Supervisor`
-- `Age`
-- `Original Procedure`
-- `ASA Physical Status`
-- `Anesthesia Type`
-- `Procedure Category`
+Full column definitions, accepted value sets, date formats, multi-value field syntax, and annotated examples are in the [Input Format Reference](Input-Format).
 
-Optional columns are documented in `INTERFACE.md`.
+Summary of required columns:
+
+- `Case ID` · `Case Date` · `Supervisor` · `Age` · `Original Procedure` · `ASA Physical Status` · `Anesthesia Type` · `Procedure Category`
+
+Optional columns (semicolon-delimited):
+
+- `Airway Management` · `Specialized Vascular Access` · `Specialized Monitoring Techniques`
 
 ## Message API
 
@@ -54,4 +53,4 @@ Optional columns are documented in `INTERFACE.md`.
 - `submitCase`
 - `getAttendingOptions`
 
-Request/response payloads and accepted enums are specified in `INTERFACE.md`.
+Request/response payloads and accepted enums are specified in `INTERFACE.md` and summarized in [Input Format Reference](Input-Format).

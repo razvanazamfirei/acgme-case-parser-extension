@@ -6,7 +6,123 @@
     <link rel="stylesheet" href="./popup.css" />
     <title>ACGME Case Submitter</title>
   </head>
-  <body class="w-[600px] min-h-[400px] max-h-[600px] overflow-hidden">
+  <body class="relative w-[600px] min-h-[400px] max-h-[600px] overflow-hidden">
+    <!-- Confirmation Modal (shown on first run) -->
+    <div
+      id="confirmationModal"
+      class="hidden absolute inset-0 bg-white z-50 flex flex-col overflow-y-auto"
+    >
+      <div class="p-5 space-y-4">
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <h2 class="text-base font-bold text-amber-900">
+            Authorization Required
+          </h2>
+          <p class="text-sm text-amber-800 mt-1">
+            This extension is restricted to authorized anesthesia residents at
+            the University of Pennsylvania Health System (UPHS) with valid ACGME
+            ADS credentials.
+          </p>
+        </div>
+
+        <div
+          class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-xs text-gray-700 space-y-2"
+        >
+          <p class="font-semibold text-gray-800">Disclaimer</p>
+          <p>
+            This tool is an independent project and is
+            <strong>not affiliated with, endorsed by, or sponsored by ACGME</strong>.
+            It does not bypass access controls and is not a scraping or data
+            mirroring tool.
+          </p>
+          <p>
+            Use only with your own authorized ADS credentials and only in
+            accordance with your program's policies and ACGME Terms of Use. All
+            case data is processed locally on your device and never transmitted
+            to any external server.
+          </p>
+          <p>
+            Bulk automation (BEAST Mode) requires explicit program approval
+            before use.
+          </p>
+        </div>
+
+        <div class="space-y-3">
+          <div class="form-field">
+            <label for="confirmInstitution"
+              >Primary Institution (sets default for case submission)</label
+            >
+            <select id="confirmInstitution">
+              <option value="HUP">HUP (Hospital of the University of Pennsylvania)</option>
+              <option value="PPMC">PPMC (Penn Presbyterian Medical Center)</option>
+              <option value="Penn Hospital">Pennsylvania Hospital</option>
+              <option value="CHOP">CHOP (Children's Hospital of Philadelphia)</option>
+            </select>
+          </div>
+
+          <label class="flex items-start gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              id="confirmCheckbox"
+              class="mt-0.5 flex-shrink-0"
+            />
+            <span class="text-sm text-gray-700">
+              I confirm that I am an anesthesia resident at UPHS with authorized
+              ACGME ADS access, and I agree to use this tool only for my own
+              case log submissions in accordance with program policies and ACGME
+              Terms of Use.
+            </span>
+          </label>
+
+          <label class="flex items-start gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              id="confirmAccuracyCheckbox"
+              class="mt-0.5 flex-shrink-0"
+            />
+            <span class="text-sm text-gray-700">
+              I understand that I am solely responsible for verifying the
+              accuracy of all submitted case data. Values auto-populated by
+              this tool — including those submitted in bulk via BEAST Mode —
+              must be reviewed for correctness before submission. I will not
+              use BEAST Mode without verifying case mappings on a sample of
+              cases first.
+            </span>
+          </label>
+        </div>
+
+        <div class="flex gap-2">
+          <button
+            type="button"
+            id="declineBtn"
+            class="flex-1 inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium cursor-pointer bg-white text-gray-700 hover:bg-gray-50"
+          >
+            Decline
+          </button>
+          <button
+            type="button"
+            id="confirmBtn"
+            disabled
+            class="flex-1 inline-flex items-center justify-center px-4 py-2 border-0 rounded-md text-sm font-medium cursor-pointer transition-all bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Confirm Access
+          </button>
+        </div>
+
+        <div
+          id="declineMessage"
+          class="hidden p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700"
+        >
+          This extension is restricted to authorized UPHS anesthesia residents.
+          You may close this popup.
+        </div>
+
+        <p class="text-xs text-gray-400 text-center">
+          This confirmation is stored locally and will not be requested again on
+          this device.
+        </p>
+      </div>
+    </div>
+
     <div class="flex flex-col h-full">
       <!-- Header -->
       <header class="bg-white border-b px-6 py-4">
@@ -19,10 +135,30 @@
               Upload Excel and cycle through cases
             </p>
           </div>
+          <div class="flex items-center gap-1">
+          <button
+            type="button"
+            id="helpToggle"
+            class="hover:bg-gray-100 border border-gray-200 rounded-md p-1.5 cursor-pointer text-gray-500 hover:text-gray-700 flex items-center justify-center transition-colors"
+            title="Help & Format Reference"
+          >
+            <svg
+              aria-hidden="true"
+              width="18px"
+              height="18px"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M12 17h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
           <button
             type="button"
             id="settingsToggle"
-            class="bg-white/20 hover:bg-white/30 border-0 rounded-md p-1.5 cursor-pointer text-white flex items-center justify-center transition-colors"
+            class="hover:bg-gray-100 border border-gray-200 rounded-md p-1.5 cursor-pointer text-gray-500 hover:text-gray-700 flex items-center justify-center transition-colors"
             title="Settings"
           >
             <svg
@@ -35,32 +171,32 @@
             >
               <path
                 d="M12 4a1 1 0 0 0-1 1c0 1.692-2.046 2.54-3.243 1.343a1 1 0 1 0-1.414 1.414C7.54 8.954 6.693 11 5 11a1 1 0 1 0 0 2c1.692 0 2.54 2.046 1.343 3.243a1 1 0 0 0 1.414 1.414C8.954 16.46 11 17.307 11 19a1 1 0 1 0 2 0c0-1.692 2.046-2.54 3.243-1.343a1 1 0 1 0 1.414-1.414C16.46 15.046 17.307 13 19 13a1 1 0 1 0 0-2c-1.692 0-2.54-2.046-1.343-3.243a1 1 0 0 0-1.414-1.414C15.046 7.54 13 6.693 13 5a1 1 0 0 0-1-1zm-2.992.777a3 3 0 0 1 5.984 0 3 3 0 0 1 4.23 4.231 3 3 0 0 1 .001 5.984 3 3 0 0 1-4.231 4.23 3 3 0 0 1-5.984 0 3 3 0 0 1-4.231-4.23 3 3 0 0 1 0-5.984 3 3 0 0 1 4.231-4.231z"
-                fill="#0D0D0D"
+                fill="currentColor"
               />
               <path
                 d="M12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-2.828-.828a4 4 0 1 1 5.656 5.656 4 4 0 0 1-5.656-5.656z"
-                fill="#0D0D0D"
+                fill="currentColor"
               />
             </svg>
           </button>
+          </div>
         </div>
       </header>
 
       <!-- Settings Section -->
       <div
         id="settingsSection"
-        class="hidden bg-gray-50 border-b px-6 py-4 space-y-4"
+        class="hidden bg-gray-50 border-b px-6 py-4 space-y-4 overflow-y-auto max-h-[440px]"
       >
         <h2 class="text-lg font-semibold text-gray-900">Settings</h2>
 
         <div class="form-field">
           <label for="settingInstitution">Default Institution</label>
           <select id="settingInstitution">
-            <option value="">Select institution</option>
-            <option value="CHOP">CHOP</option>
             <option value="HUP">HUP</option>
             <option value="PPMC">PPMC</option>
-            <option value="Penn Hospital">Penn Hospital</option>
+            <option value="Penn Hospital">Pennsylvania Hospital</option>
+            <option value="CHOP">CHOP</option>
           </select>
         </div>
 
@@ -165,6 +301,135 @@
           >
             Save Settings
           </button>
+        </div>
+      </div>
+
+      <!-- Help Section -->
+      <div
+        id="helpSection"
+        class="hidden bg-sky-50 border-b px-5 py-4 overflow-y-auto max-h-[440px] text-xs"
+      >
+        <h2 class="text-sm font-semibold text-gray-900 mb-3">Help &amp; Format Reference</h2>
+
+        <div class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-800">
+          This tool is for UPHS anesthesia residents only.
+          Not affiliated with ACGME. Use only with authorized ADS credentials.
+        </div>
+
+        <div class="mb-4">
+          <h3 class="font-semibold text-gray-800 mb-1">What This Does</h3>
+          <p class="text-gray-600">
+            Parses a standardized Excel or CSV case log and auto-fills the ACGME
+            ADS Case Entry form case by case. You review each case in the popup
+            before sending it to the open ADS tab.
+          </p>
+        </div>
+
+        <div class="mb-4">
+          <h3 class="font-semibold text-gray-800 mb-2">Required Columns</h3>
+          <p class="text-gray-500 mb-2 italic">Column names are case-insensitive. Missing any required column blocks file load.</p>
+          <table class="w-full border-collapse text-xs">
+            <thead>
+              <tr class="bg-gray-100">
+                <th class="border border-gray-200 px-2 py-1 text-left font-semibold">Column</th>
+                <th class="border border-gray-200 px-2 py-1 text-left font-semibold">Accepted Values</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="border-b">
+                <td class="border border-gray-200 px-2 py-1 font-mono">Case ID</td>
+                <td class="border border-gray-200 px-2 py-1">Any string. Rows without a Case ID are skipped.</td>
+              </tr>
+              <tr class="border-b bg-gray-50">
+                <td class="border border-gray-200 px-2 py-1 font-mono">Case Date</td>
+                <td class="border border-gray-200 px-2 py-1">M/D/YYYY, ISO 8601, or Excel serial number. Stored as M/D/YYYY.</td>
+              </tr>
+              <tr class="border-b">
+                <td class="border border-gray-200 px-2 py-1 font-mono">Supervisor</td>
+                <td class="border border-gray-200 px-2 py-1">Attending name. Fuzzy-matched against ADS dropdown. Format: LASTNAME, FIRSTNAME.</td>
+              </tr>
+              <tr class="border-b bg-gray-50">
+                <td class="border border-gray-200 px-2 py-1 font-mono">Age</td>
+                <td class="border border-gray-200 px-2 py-1">
+                  <span class="font-mono">a</span> (&lt;3mo) &middot;
+                  <span class="font-mono">b</span> (3mo-3yr) &middot;
+                  <span class="font-mono">c</span> (3-12yr) &middot;
+                  <span class="font-mono">d</span> (12-65yr) &middot;
+                  <span class="font-mono">e</span> (&ge;65yr)
+                </td>
+              </tr>
+              <tr class="border-b">
+                <td class="border border-gray-200 px-2 py-1 font-mono">Original Procedure</td>
+                <td class="border border-gray-200 px-2 py-1">Free text. Stored in the Comments field in ADS.</td>
+              </tr>
+              <tr class="border-b bg-gray-50">
+                <td class="border border-gray-200 px-2 py-1 font-mono">ASA Physical Status</td>
+                <td class="border border-gray-200 px-2 py-1 font-mono">1 2 3 4 5 6 1E 2E 3E 4E 5E</td>
+              </tr>
+              <tr class="border-b">
+                <td class="border border-gray-200 px-2 py-1 font-mono">Anesthesia Type</td>
+                <td class="border border-gray-200 px-2 py-1 font-mono">GA &middot; MAC &middot; Spinal &middot; Epidural &middot; CSE &middot; PNB Single &middot; PNB Continuous</td>
+              </tr>
+              <tr class="bg-gray-50">
+                <td class="border border-gray-200 px-2 py-1 font-mono">Procedure Category</td>
+                <td class="border border-gray-200 px-2 py-1">
+                  Cardiac with CPB &middot; Cardiac without CPB &middot;
+                  Procedures on major vessels (open) &middot; Procedures on major vessels (endovascular) &middot;
+                  Intracerebral Vascular (open) &middot; Intracerebral Nonvascular (open) &middot; Intracerebral (endovascular) &middot;
+                  Cesarean Delivery &middot; Vaginal Delivery &middot;
+                  Intrathoracic non-cardiac &middot; Other (procedure cat)
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mb-4">
+          <h3 class="font-semibold text-gray-800 mb-2">Optional Columns</h3>
+          <p class="text-gray-500 mb-2 italic">Multiple values separated by semicolons (;). Missing optional columns are treated as empty.</p>
+          <table class="w-full border-collapse text-xs">
+            <thead>
+              <tr class="bg-gray-100">
+                <th class="border border-gray-200 px-2 py-1 text-left font-semibold">Column</th>
+                <th class="border border-gray-200 px-2 py-1 text-left font-semibold">Accepted Values</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="border-b">
+                <td class="border border-gray-200 px-2 py-1 font-mono">Airway Management</td>
+                <td class="border border-gray-200 px-2 py-1">
+                  ETT &middot; Nasal ETT &middot; Supraglottic Airway &middot; Mask &middot; DLT &middot;
+                  Direct Laryngoscope &middot; Video Laryngoscope &middot; Flexible Bronchoscopic
+                  <br/><span class="text-amber-700 font-semibold">Special token:</span>
+                  <span class="font-mono">Difficult Airway</span> sets Unanticipated difficult airway and is removed from the airway list.
+                </td>
+              </tr>
+              <tr class="border-b bg-gray-50">
+                <td class="border border-gray-200 px-2 py-1 font-mono">Specialized Vascular Access</td>
+                <td class="border border-gray-200 px-2 py-1">
+                  Arterial Catheter &middot; Central Venous Catheter &middot; PA Catheter &middot; Ultrasound Guided
+                </td>
+              </tr>
+              <tr>
+                <td class="border border-gray-200 px-2 py-1 font-mono">Specialized Monitoring Techniques</td>
+                <td class="border border-gray-200 px-2 py-1">
+                  TEE &middot; Neuromonitoring &middot; CSF Drain
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mb-3">
+          <h3 class="font-semibold text-gray-800 mb-1">Tips</h3>
+          <ul class="space-y-1 text-gray-600 list-disc list-inside">
+            <li>Only the first sheet of the workbook is read.</li>
+            <li>Extra columns beyond the expected ones are ignored.</li>
+            <li>The Supervisor field uses fuzzy matching - exact last name matches work best.</li>
+            <li>For bulk submission (BEAST Mode), obtain program approval first.</li>
+            <li>Use <strong>Fill Form</strong> first to verify mappings before submitting.</li>
+            <li>Arrow keys navigate between cases when no input is focused.</li>
+          </ul>
         </div>
       </div>
 
@@ -765,7 +1030,8 @@
               <span id="beastModeText">START BEAST MODE</span>
             </button>
             <p class="text-xs text-gray-500 text-center mt-2">
-              Auto-fills and submits all pending cases (0.5-1s delay)
+              Bulk auto-fills and submits all pending cases. Verify sample
+              cases with Fill Form first. You are responsible for accuracy.
             </p>
           </div>
         </div>
@@ -777,7 +1043,7 @@
       </div>
 
       <footer class="border-t px-6 py-2 bg-gray-50">
-        <p class="text-xs text-gray-500 text-center">v1.3.1 - BEAST Mode</p>
+        <p class="text-xs text-gray-500 text-center">v1.3.1 - UPHS Anesthesia | Not affiliated with ACGME</p>
       </footer>
     </div>
 

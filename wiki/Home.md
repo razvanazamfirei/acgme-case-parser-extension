@@ -8,14 +8,19 @@ This extension has one narrow purpose: **help authorized ADS users import a stan
 
 It is not a general web automation tool, scraper, crawler, or account-access utility.
 
+## Audience
+
+This extension is intended **only** for anesthesia residents at the University of Pennsylvania Health System (UPHS) with authorized ACGME ADS credentials. First-run requires explicit confirmation of this before the extension can be used.
+
 ## Start Here
 
 - [Getting Started](Getting-Started)
 - [User Guide](User-Guide)
+- [Input Format Reference](Input-Format)
+- [Settings Reference](Settings-Reference)
 - [Chrome Web Store Publishing](Chrome-Web-Store-Publishing)
 - [Permissions and Privacy](Permissions-and-Privacy)
 - [Compliance and Disclaimers](Compliance-and-Disclaimers)
-- [Settings Reference](Settings-Reference)
 - [Architecture and Interface](Architecture-and-Interface)
 - [Releases and Versioning](Releases-and-Versioning)
 - [Troubleshooting](Troubleshooting)

@@ -10,7 +10,7 @@ export const State = {
   caseStatuses: {},
 
   settings: {
-    defaultInstitution: "",
+    defaultInstitution: "HUP",
     defaultAttending: "",
     submitDelay: 0.5,
     cardiacAutoFill: true,

@@ -1,5 +1,9 @@
 # User Guide
 
+## 0. First Run: Authorization Confirmation
+
+On first launch you will see an **Authorization Required** modal. Select your primary UPHS institution, check the confirmation box, and click **Confirm Access**. This is shown once and stored in Chrome sync storage.
+
 ## 1. Open ADS Case Entry
 
 Keep an active tab open on:
@@ -11,13 +15,15 @@ If you are not on this route, fill/submit actions are blocked by design.
 ## 2. Configure Settings
 
 1. Open the popup.
-2. Click the gear icon.
-3. Configure any defaults:
-   - Institution
+2. Click the **gear icon** (settings) or the **question mark icon** (help & format reference).
+3. To change settings, click the gear icon and configure:
+   - Default Institution (pre-selected as HUP on first run)
    - Attending fallback (`LASTNAME, FIRSTNAME`)
    - Auto-submit delay
    - Cardiac/5E helper toggles
 4. Click **Save Settings**.
+
+The help panel (question mark icon) shows a quick reference for accepted column names and values. See [Input Format Reference](Input-Format) for the full schema.
 
 ![Settings](https://raw.githubusercontent.com/razvanazamfirei/acgme-case-parser-extension/main/docs/screenshots/02-settings.png)
 

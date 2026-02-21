@@ -80,4 +80,23 @@ export const Storage = {
       throw error;
     }
   },
+
+  async isConfirmed() {
+    try {
+      const result = await chrome.storage.sync.get(STORAGE_KEYS.confirmed);
+      return result[STORAGE_KEYS.confirmed] === true;
+    } catch (error) {
+      console.error("Error checking confirmation:", error);
+      return false;
+    }
+  },
+
+  async setConfirmed() {
+    try {
+      await chrome.storage.sync.set({ [STORAGE_KEYS.confirmed]: true });
+    } catch (error) {
+      console.error("Error saving confirmation:", error);
+      throw error;
+    }
+  },
 };

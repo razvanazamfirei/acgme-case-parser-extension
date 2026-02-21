@@ -28,17 +28,38 @@ bun run build
 5. Click **Load unpacked**.
 6. Select the repo `dist/` directory.
 
-## First Run
+## Requirements
+
+- UPHS anesthesia residency enrollment
+- Authorized ACGME ADS credentials
+- Google Chrome (current stable)
+- A standardized input file in `.xlsx`, `.xls`, or `.csv`
+
+## First Run: Authorization Confirmation
+
+On first launch the extension displays an **Authorization Required** modal. You must:
+
+1. Select your primary UPHS institution (sets the default for form filling).
+2. Check the confirmation box affirming you are a UPHS anesthesia resident with authorized ADS access.
+3. Click **Confirm Access**.
+
+This is stored in Chrome sync storage and will not be shown again on this device.
+
+If you decline, the extension does not proceed. Close the popup to exit.
+
+## After Confirmation
 
 1. Open ADS Case Entry in a tab:
    - `https://apps.acgme.org/ads/CaseLogs/CaseEntry/*`
 2. Click the extension icon.
-3. Open settings using the gear icon.
-4. Save defaults (institution, attending, delay, optional toggles).
+3. Optionally open settings (gear icon) to adjust institution, attending fallback, submit delay, or toggle helpers.
+4. Save Settings if you make changes.
 
 ![Settings](https://raw.githubusercontent.com/razvanazamfirei/acgme-case-parser-extension/main/docs/screenshots/02-settings.png)
 
-## File Contract (Required Columns)
+## File Contract
+
+Required columns (all eight must be present):
 
 - `Case ID`
 - `Case Date`
@@ -49,4 +70,10 @@ bun run build
 - `Anesthesia Type`
 - `Procedure Category`
 
-See [Architecture and Interface](Architecture-and-Interface) for full schema details.
+Optional columns (missing = treated as empty):
+
+- `Airway Management`
+- `Specialized Vascular Access`
+- `Specialized Monitoring Techniques`
+
+See [Input Format Reference](Input-Format) for accepted values, date formats, multi-value field syntax, and examples.

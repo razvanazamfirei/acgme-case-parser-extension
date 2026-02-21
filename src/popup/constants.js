@@ -8,6 +8,8 @@ export const DOM = {
   navSection: "navSection",
   previewSection: "previewSection",
   settingsSection: "settingsSection",
+  helpSection: "helpSection",
+  confirmationModal: "confirmationModal",
   statusSection: "statusSection",
 
   // Upload
@@ -47,6 +49,17 @@ export const DOM = {
   fillSubmitBtn: "fillSubmitBtn",
   beastModeBtn: "beastModeBtn",
   beastModeText: "beastModeText",
+
+  // Help
+  helpToggle: "helpToggle",
+
+  // Confirmation modal
+  confirmCheckbox: "confirmCheckbox",
+  confirmAccuracyCheckbox: "confirmAccuracyCheckbox",
+  confirmBtn: "confirmBtn",
+  declineBtn: "declineBtn",
+  declineMessage: "declineMessage",
+  confirmInstitution: "confirmInstitution",
 
   // Settings
   settingsToggle: "settingsToggle",
@@ -92,6 +105,7 @@ export const STORAGE_KEYS = {
   currentIndex: "acgme_currentIndex",
   caseStatuses: "acgme_caseStatuses",
   settings: "acgme_settings",
+  confirmed: "acgme_uphs_confirmed",
 };
 
 export const STATUS_TYPES = {
