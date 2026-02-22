@@ -1,6 +1,6 @@
 # ACGME Case Submitter User Guide
 
-Version: `1.3.1`
+Version: `1.3.2`
 
 This guide is written in Markdown, so it can be exported directly to PDF.
 
@@ -25,7 +25,7 @@ fill the ACGME Case Entry form on:
 - This guide is the operational documentation, not legal advice.
 - No disclaimer can guarantee compliance by itself. Your account rights,
   institution policy, and ACGME terms control permitted use.
-- For repository-level compliance language, see `ACGME_COMPLIANCE.md`.
+- For repository-level compliance language, see `wiki/Compliance-and-Disclaimers.md`.
 
 ## 3. Requirements
 

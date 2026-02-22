@@ -76,10 +76,10 @@ Policy references:
 
 Use the prepared store-sized assets:
 
-- `docs/screenshots/store-01-upload-640x400.png`
-- `docs/screenshots/store-02-settings-640x400.png`
-- `docs/screenshots/store-03-review-640x400.png`
-- `docs/screenshots/store-04-actions-640x400.png`
+- `assets/screenshots/store-01-upload-640x400.png`
+- `assets/screenshots/store-02-settings-640x400.png`
+- `assets/screenshots/store-03-review-640x400.png`
+- `assets/screenshots/store-04-actions-640x400.png`
 
 ## 8. Common Rejection Risks and Mitigations
 

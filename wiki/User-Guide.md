@@ -19,7 +19,7 @@ If you are not on this route, fill/submit actions are blocked by design.
    - Cardiac/5E helper toggles
 4. Click **Save Settings**.
 
-![Settings](https://raw.githubusercontent.com/razvanazamfirei/acgme-case-parser-extension/main/docs/screenshots/02-settings.png)
+![Settings](https://raw.githubusercontent.com/razvanazamfirei/acgme-case-parser-extension/main/assets/screenshots/02-settings.png)
 
 ## 3. Load Cases
 
@@ -27,7 +27,7 @@ If you are not on this route, fill/submit actions are blocked by design.
 2. Select your `.xlsx`, `.xls`, or `.csv` file.
 3. Confirm case counters appear.
 
-![Load cases](https://raw.githubusercontent.com/razvanazamfirei/acgme-case-parser-extension/main/docs/screenshots/01-upload.png)
+![Load cases](https://raw.githubusercontent.com/razvanazamfirei/acgme-case-parser-extension/main/assets/screenshots/01-upload.png)
 
 ## 4. Review Case Data
 
@@ -35,7 +35,7 @@ If you are not on this route, fill/submit actions are blocked by design.
 2. Review fields before writing to ADS.
 3. Watch status chips (`pending`, `submitted`, `skipped`).
 
-![Review case](https://raw.githubusercontent.com/razvanazamfirei/acgme-case-parser-extension/main/docs/screenshots/03-review.png)
+![Review case](https://raw.githubusercontent.com/razvanazamfirei/acgme-case-parser-extension/main/assets/screenshots/03-review.png)
 
 ## 5. Execute Actions
 
@@ -44,7 +44,7 @@ If you are not on this route, fill/submit actions are blocked by design.
 - **Skip**: marks case skipped.
 - **START BEAST MODE**: processes all pending cases with delay.
 
-![Action status](https://raw.githubusercontent.com/razvanazamfirei/acgme-case-parser-extension/main/docs/screenshots/04-actions.png)
+![Action status](https://raw.githubusercontent.com/razvanazamfirei/acgme-case-parser-extension/main/assets/screenshots/04-actions.png)
 
 ## 6. Recommended Operating Sequence
 

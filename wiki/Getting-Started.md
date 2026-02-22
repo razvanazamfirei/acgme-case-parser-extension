@@ -36,7 +36,7 @@ bun run build
 3. Open settings using the gear icon.
 4. Save defaults (institution, attending, delay, optional toggles).
 
-![Settings](https://raw.githubusercontent.com/razvanazamfirei/acgme-case-parser-extension/main/docs/screenshots/02-settings.png)
+![Settings](https://raw.githubusercontent.com/razvanazamfirei/acgme-case-parser-extension/main/assets/screenshots/02-settings.png)
 
 ## File Contract (Required Columns)
 

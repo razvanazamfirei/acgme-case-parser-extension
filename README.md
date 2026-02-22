@@ -102,9 +102,9 @@ This includes:
 - `INTERFACE.md`: Parser and runtime interface contract
 - `SETTINGS.md`: Runtime options
 - `PRIVACY.md`: Data handling and privacy statement
-- `ACGME_COMPLIANCE.md`: Non-affiliation, policy-aware usage, legal disclaimer
 - `CHANGELOG.md`: Release history
 - `USER_GUIDE.md`: End-user install and operation guide (PDF-friendly Markdown)
+- `SHAREABLE_GUIDE.md`: Simple end-user guide with screenshots for sharing
 - `RELEASING.md`: Version bump + tag + GitHub Release process
 - `wiki/`: Comprehensive GitHub Wiki source pages
 - `scripts/wiki/publish.sh`: Sync wiki source pages to GitHub Wiki

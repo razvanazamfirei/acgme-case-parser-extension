@@ -2,9 +2,12 @@
 
 ## Unreleased
 
+## 1.3.2 - 2026-02-22
+
 ### Added
 
-- `ACGME_COMPLIANCE.md` with non-affiliation and policy-aware usage disclaimers
+- `SHAREABLE_GUIDE.md` with a simple step-by-step guide and screenshots for
+  sharing with end users
 - `RELEASING.md` with a Bun-first release process
 - `scripts/release/bump.mjs` for `major`/`minor`/`patch` version bumps
 - `.github/workflows/release.yml` for tag-triggered GitHub Releases
@@ -13,9 +16,15 @@
 
 ### Changed
 
+- Version bump to `1.3.2` across `package.json`, `manifest.json`,
+  `src/popup/index.html`, and `USER_GUIDE.md`
 - Repository docs now use Bun commands consistently (`bun install`, `bun run ...`)
 - Package metadata/license changed to Apache 2.0 (`Apache-2.0`)
 - `package:zip` and release scripts now use Bun-based version/command flow
+- Documentation links updated to remove references to deleted
+  `ACGME_COMPLIANCE.md`
+- Wiki screenshot paths updated from `docs/screenshots` to
+  `assets/screenshots`
 
 ### Removed
 

@@ -30,7 +30,7 @@ It is not a general web automation tool, scraper, crawler, or account-access uti
 
 ## Quick Visual
 
-![Extension review screen](https://raw.githubusercontent.com/razvanazamfirei/acgme-case-parser-extension/main/docs/screenshots/03-review.png)
+![Extension review screen](https://raw.githubusercontent.com/razvanazamfirei/acgme-case-parser-extension/main/assets/screenshots/03-review.png)
 
 ## Repository Sources
 
@@ -38,7 +38,7 @@ The wiki content is sourced from these repo docs:
 
 - `README.md`
 - `USER_GUIDE.md`
-- `ACGME_COMPLIANCE.md`
+- `wiki/Compliance-and-Disclaimers.md`
 - `PRIVACY.md`
 - `SETTINGS.md`
 - `INTERFACE.md`
