@@ -1,6 +1,6 @@
 {
   "name": "acgme-case-submitter",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "Chrome extension to auto-fill ACGME case entry forms",
   "license": "Apache-2.0",
   "author": "Razvan Azamfirei",

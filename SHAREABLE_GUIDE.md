@@ -1,6 +1,6 @@
 # ACGME Case Submitter: Shareable Quick Guide
 
-Version: `1.3.2`
+Version: `1.3.3`
 
 This is a simple guide you can share directly with residents/faculty.
 

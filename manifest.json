@@ -1,14 +1,10 @@
 {
   "manifest_version": 3,
   "name": "ACGME Case Submitter",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "Auto-fill ACGME case entry forms from standardized case logs.",
-  "permissions": [
-    "storage"
-  ],
-  "host_permissions": [
-    "https://apps.acgme.org/ads/CaseLogs/CaseEntry/*"
-  ],
+  "permissions": ["storage"],
+  "host_permissions": ["https://apps.acgme.org/ads/CaseLogs/CaseEntry/*"],
   "icons": {
     "16": "public/icon16.png",
     "48": "public/icon48.png",
@@ -24,12 +20,8 @@
   },
   "content_scripts": [
     {
-      "matches": [
-        "https://apps.acgme.org/ads/CaseLogs/CaseEntry/*"
-      ],
-      "js": [
-        "src/content/content.js"
-      ],
+      "matches": ["https://apps.acgme.org/ads/CaseLogs/CaseEntry/*"],
+      "js": ["src/content/content.js"],
       "run_at": "document_idle"
     }
   ],

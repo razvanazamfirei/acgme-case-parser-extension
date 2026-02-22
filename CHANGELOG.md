@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 1.3.3 - 2026-02-22
+
+### Changed
+
+- Version bump to `1.3.3` across `package.json`, `manifest.json`,
+  `src/popup/index.html`, and `USER_GUIDE.md`
+- Updated `biome.json` schema to `2.4.3` to match CI/runtime tooling
+- Normalized `manifest.json` formatting to satisfy Biome checks in release CI
+- Updated `SHAREABLE_GUIDE.md` version line to `1.3.3`
+
 ## 1.3.2 - 2026-02-22
 
 ### Added
