@@ -32,11 +32,20 @@ export const UI = {
       const dialog = this.get(DOM.confirmDialog);
       this.get(DOM.confirmDialogMessage).textContent = message;
 
-      const handleOk = () => { cleanup(); resolve(true); };
-      const handleCancel = () => { cleanup(); resolve(false); };
+      const handleOk = () => {
+        cleanup();
+        resolve(true);
+      };
+      const handleCancel = () => {
+        cleanup();
+        resolve(false);
+      };
       const cleanup = () => {
         this.get(DOM.confirmDialogOk).removeEventListener("click", handleOk);
-        this.get(DOM.confirmDialogCancel).removeEventListener("click", handleCancel);
+        this.get(DOM.confirmDialogCancel).removeEventListener(
+          "click",
+          handleCancel,
+        );
         dialog.close();
       };
 
