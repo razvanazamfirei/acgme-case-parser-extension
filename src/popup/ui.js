@@ -30,27 +30,26 @@ export const UI = {
   confirm(message) {
     return new Promise((resolve) => {
       const dialog = this.get(DOM.confirmDialog);
+      const okBtn = this.get(DOM.confirmDialogOk);
+      const cancelBtn = this.get(DOM.confirmDialogCancel);
       this.get(DOM.confirmDialogMessage).textContent = message;
 
-      const handleOk = () => {
+      const cleanup = () => {
+        okBtn.removeEventListener("click", onOk);
+        cancelBtn.removeEventListener("click", onCancel);
+        dialog.close();
+      };
+      const onOk = () => {
         cleanup();
         resolve(true);
       };
-      const handleCancel = () => {
+      const onCancel = () => {
         cleanup();
         resolve(false);
       };
-      const cleanup = () => {
-        this.get(DOM.confirmDialogOk).removeEventListener("click", handleOk);
-        this.get(DOM.confirmDialogCancel).removeEventListener(
-          "click",
-          handleCancel,
-        );
-        dialog.close();
-      };
 
-      this.get(DOM.confirmDialogOk).addEventListener("click", handleOk);
-      this.get(DOM.confirmDialogCancel).addEventListener("click", handleCancel);
+      okBtn.addEventListener("click", onOk);
+      cancelBtn.addEventListener("click", onCancel);
       dialog.showModal();
     });
   },
