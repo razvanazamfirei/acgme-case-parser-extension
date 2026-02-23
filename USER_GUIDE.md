@@ -1,6 +1,6 @@
 # ACGME Case Submitter User Guide
 
-Version: `1.3.3`
+Version: `1.3.4`
 
 This guide is written in Markdown, so it can be exported directly to PDF.
 

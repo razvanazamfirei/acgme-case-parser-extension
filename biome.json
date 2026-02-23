@@ -1,6 +1,6 @@
 {
   "root": true,
-  "$schema": "https://biomejs.dev/schemas/2.4.3/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.4.4/schema.json",
   "linter": {
     "enabled": true,
     "rules": {
@@ -15,7 +15,8 @@
       "!!**/dist",
       "!!**/node_modules",
       "!!**/*.min.js",
-      "!!**/public/xlsx.min.js"
+      "!!**/public/xlsx.min.js",
+      "!!**/mock-website"
     ]
   },
   "formatter": {

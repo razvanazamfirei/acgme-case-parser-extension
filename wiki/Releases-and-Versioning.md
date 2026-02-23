@@ -33,7 +33,7 @@ bun run release:prepare
 4. Commit and push bump:
 
 ```bash
-git add package.json manifest.json src/popup/index.html USER_GUIDE.md CHANGELOG.md bun.lock
+git add package.json manifest.json USER_GUIDE.md CHANGELOG.md bun.lock
 git commit -m "release: vX.Y.Z"
 git push origin main
 ```
@@ -63,5 +63,6 @@ It updates:
 
 - `package.json`
 - `manifest.json`
-- `src/popup/index.html` footer version
 - `USER_GUIDE.md` version line
+
+The popup footer version is read dynamically from `manifest.json` at runtime.

@@ -1,6 +1,6 @@
 {
   "name": "acgme-case-submitter",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "Chrome extension to auto-fill ACGME case entry forms",
   "license": "Apache-2.0",
   "author": "Razvan Azamfirei",
@@ -38,7 +38,7 @@
     "release:publish": "bun run release:prepare && bun run release:tag"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.3",
+    "@biomejs/biome": "^2.4.4",
     "@crxjs/vite-plugin": "^2.3.0",
     "@tailwindcss/postcss": "^4.2.0",
     "autoprefixer": "^10.4.24",

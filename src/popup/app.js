@@ -30,7 +30,10 @@ const FileUpload = {
       return;
     }
 
-    UI.get(DOM.fileName).textContent = file.name;
+    const fileNameEl = UI.get(DOM.fileName);
+    fileNameEl.textContent = file.name;
+    fileNameEl.title = file.name;
+    fileNameEl.classList.add("has-file");
 
     try {
       const result = await Excel.parseFile(file);
@@ -58,7 +61,9 @@ const FileUpload = {
   },
 
   openFilePicker() {
-    UI.get(DOM.fileInput).click();
+    const fileInput = UI.get(DOM.fileInput);
+    fileInput.value = "";
+    fileInput.click();
   },
 };
 
@@ -312,7 +317,10 @@ const Session = {
       fileInput.type = "file";
 
       // Reset UI elements
-      UI.get(DOM.fileName).textContent = "";
+      const fileNameEl = UI.get(DOM.fileName);
+      fileNameEl.textContent = "No file chosen";
+      fileNameEl.title = "No file chosen";
+      fileNameEl.classList.remove("has-file");
 
       // Clear form fields if they exist
       const formFields = [
@@ -429,6 +437,18 @@ const Session = {
         "info",
       );
     }
+  },
+};
+
+const Metadata = {
+  setVersion() {
+    const versionEl = UI.get(DOM.appVersion);
+    if (!versionEl) {
+      return;
+    }
+
+    const version = globalThis.chrome?.runtime?.getManifest?.()?.version;
+    versionEl.textContent = version ? `v${version}` : "v-";
   },
 };
 
@@ -608,6 +628,7 @@ const EventHandlers = {
 const App = {
   async init() {
     try {
+      Metadata.setVersion();
       await Storage.loadSettings();
       Settings.applyToUI();
       await Session.restore();

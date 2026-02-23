@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Changed
+
+- Popup footer version is now derived from `chrome.runtime.getManifest().version`
+  instead of hardcoded HTML text
+- File upload controls were restyled so the filename display and choose button
+  use a cohesive, consistent visual style
+- Release docs and `scripts/release/bump.mjs` were updated to remove
+  now-unneeded `src/popup/index.html` version replacement
+
 ## 1.3.3 - 2026-02-22
 
 ### Changed

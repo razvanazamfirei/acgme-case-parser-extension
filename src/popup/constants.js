@@ -62,6 +62,7 @@ export const DOM = {
 
   // Status
   statusMessage: "statusMessage",
+  appVersion: "appVersion",
 
   // Validation
   validationSummary: "validationSummary",

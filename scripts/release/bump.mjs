@@ -14,7 +14,6 @@ if (!validTypes.has(releaseType)) {
 const rootDir = process.cwd();
 const packagePath = path.join(rootDir, "package.json");
 const manifestPath = path.join(rootDir, "manifest.json");
-const popupPath = path.join(rootDir, "src/popup/index.html");
 const userGuidePath = path.join(rootDir, "USER_GUIDE.md");
 
 function readJson(filePath) {
@@ -73,21 +72,13 @@ manifestJson.version = newVersion;
 writeJson(manifestPath, manifestJson);
 
 replaceVersionInFile(
-  popupPath,
-  /v\d+\.\d+\.\d+\s*-\s*BEAST Mode/g,
-  `v${newVersion} - BEAST Mode`,
-);
-
-replaceVersionInFile(
   userGuidePath,
   /Version:\s*`\d+\.\d+\.\d+`/g,
   `Version: \`${newVersion}\``,
 );
 
 console.log(`Version bumped: ${oldVersion} -> ${newVersion}`);
-console.log(
-  "Updated: package.json, manifest.json, src/popup/index.html, USER_GUIDE.md",
-);
+console.log("Updated: package.json, manifest.json, USER_GUIDE.md");
 console.log(
   "Next: update CHANGELOG.md, then commit and run bun run release:publish",
 );
