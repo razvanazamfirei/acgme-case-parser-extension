@@ -794,6 +794,29 @@
       </footer>
     </div>
 
+    <!-- Confirm Dialog -->
+    <dialog id="confirmDialog" class="rounded-lg shadow-xl border-0 p-0 w-72">
+      <div class="p-5">
+        <p id="confirmDialogMessage" class="text-sm text-gray-700 mb-4"></p>
+        <div class="flex gap-2">
+          <button
+            type="button"
+            id="confirmDialogCancel"
+            class="flex-1 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            id="confirmDialogOk"
+            class="flex-1 px-3 py-2 rounded-md text-sm font-medium cursor-pointer border-0 bg-yellow-400 text-yellow-900 hover:bg-yellow-500"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+    </dialog>
+
     <script data-vite-ignore src="/xlsx.min.js"></script>
     <script type="module" src="./app.js"></script>
   </body>

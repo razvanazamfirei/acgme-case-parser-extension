@@ -59,6 +59,10 @@ export const DOM = {
   settingShowWarnings: "settingShowWarnings",
   saveSettingsBtn: "saveSettingsBtn",
   clearSessionBtn: "clearSessionBtn",
+  confirmDialog: "confirmDialog",
+  confirmDialogMessage: "confirmDialogMessage",
+  confirmDialogOk: "confirmDialogOk",
+  confirmDialogCancel: "confirmDialogCancel",
 
   // Status
   statusMessage: "statusMessage",

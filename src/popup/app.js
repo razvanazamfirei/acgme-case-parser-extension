@@ -300,9 +300,7 @@ const BeastMode = {
 
 const Session = {
   async clear() {
-    if (
-      !confirm("Clear all loaded cases and progress? This cannot be undone.")
-    ) {
+    if (!(await UI.confirm("Clear all loaded cases and progress? This cannot be undone."))) {
       return;
     }
 

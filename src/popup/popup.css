@@ -410,6 +410,10 @@ body {
   color: #1d4ed8;
 }
 
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.4);
+}
+
 /* Summary item styles used by confirmation.js (restored from old popup.css) */
 .summary-item {
   display: flex;
