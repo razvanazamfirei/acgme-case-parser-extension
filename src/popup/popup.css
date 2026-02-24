@@ -45,20 +45,20 @@
 
 .stat.pending,
 .status-badge.pending {
-  background: #bee3f8;
-  color: #2b6cb0;
+  background: rgb(190 227 248);
+  color: rgb(43 108 176);
 }
 
 .stat.submitted,
 .status-badge.submitted {
-  background: #c6f6d5;
-  color: #22543d;
+  background: rgb(198 246 213);
+  color: rgb(34 84 61);
 }
 
 .stat.skipped,
 .status-badge.skipped {
-  background: #fefcbf;
-  color: #744210;
+  background: rgb(254 252 191);
+  color: rgb(116 66 16);
 }
 
 /* Match badges - fuzzy match indicators */
@@ -75,13 +75,13 @@
 }
 
 .match-badge.exact {
-  background: #c6f6d5;
-  color: #22543d;
+  background: rgb(198 246 213);
+  color: rgb(34 84 61);
 }
 
 .match-badge.partial {
-  background: #fefcbf;
-  color: #744210;
+  background: rgb(254 252 191);
+  color: rgb(116 66 16);
 }
 
 /* Info tooltips - CSS-only hover tooltips */
@@ -94,12 +94,12 @@
 }
 
 .info-icon {
-  color: #a0aec0;
+  color: rgb(160 174 192);
   transition: color 0.15s;
 }
 
 .info-tooltip:hover .info-icon {
-  color: #667eea;
+  color: rgb(102 126 234);
 }
 
 .tooltip-text {
@@ -109,8 +109,8 @@
   bottom: 125%;
   left: 50%;
   transform: translateX(-50%);
-  background: #2d3748;
-  color: white;
+  background: rgb(45 55 72);
+  color: rgb(255 255 255);
   padding: 0.5rem;
   border-radius: 0.375rem;
   font-size: 0.6875rem;
@@ -131,7 +131,7 @@
   margin-left: -0.3125rem;
   border-width: 5px;
   border-style: solid;
-  border-color: #2d3748 transparent transparent;
+  border-color: rgb(45 55 72) transparent transparent;
 }
 
 .info-tooltip:hover .tooltip-text {
@@ -144,7 +144,7 @@
   display: flex;
   align-items: center;
   font-size: 0.75rem;
-  color: #4a5568;
+  color: rgb(74 85 104);
   cursor: pointer;
   padding: 0.25rem 0.375rem;
   border-radius: 0.25rem;
@@ -153,7 +153,7 @@
 }
 
 .checkbox-label:hover {
-  background: #edf2f7;
+  background: rgb(237 242 247);
 }
 
 .checkbox-label input[type="checkbox"],
@@ -183,10 +183,10 @@
   padding: 0 0.75rem;
   display: inline-flex;
   align-items: center;
-  border: 1px solid #d1d5db;
+  border: 1px solid rgb(209 213 219);
   border-radius: 0.375rem;
-  background: #fff;
-  color: #6b7280;
+  background: rgb(255 255 255);
+  color: rgb(107 114 128);
   font-size: 0.875rem;
   line-height: 1;
   white-space: nowrap;
@@ -195,7 +195,7 @@
 }
 
 .upload-file-display.has-file {
-  color: #111827;
+  color: rgb(17 24 39);
   font-weight: 500;
 }
 
@@ -211,22 +211,22 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: rgb(241 241 241);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e0;
+  background: rgb(203 213 224);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a0aec0;
+  background: rgb(160 174 192);
 }
 
 body {
-  color: #111827;
-  background-color: #fff;
+  color: rgb(17 24 39);
+  background-color: rgb(255 255 255);
 }
 
 .btn {
@@ -245,25 +245,25 @@ body {
 }
 
 .btn-primary {
-  background-color: #0284c7;
-  color: #fff;
+  background-color: rgb(2 132 199);
+  color: rgb(255 255 255);
 }
 
 .btn-primary:hover {
-  background-color: #0369a1;
+  background-color: rgb(3 105 161);
 }
 
 .btn-primary:focus {
-  outline-color: #0ea5e9;
+  outline-color: rgb(14 165 233);
 }
 
 .btn-secondary {
-  background-color: #4b5563;
-  color: #fff;
+  background-color: rgb(75 85 99);
+  color: rgb(255 255 255);
 }
 
 .btn-secondary:hover {
-  background-color: #374151;
+  background-color: rgb(55 65 81);
 }
 
 .btn-secondary:focus {
@@ -276,39 +276,39 @@ body {
 }
 
 .btn-nav:hover {
-  background-color: #e5e7eb;
+  background-color: rgb(229 231 235);
 }
 
 .btn-nav:focus {
-  outline-color: #9ca3af;
+  outline-color: rgb(156 163 175);
 }
 
 .btn-skip {
-  background-color: #fff;
-  color: #374151;
-  border: 1px solid #d1d5db;
+  background-color: rgb(255 255 255);
+  color: rgb(55 65 81);
+  border: 1px solid rgb(209 213 219);
 }
 
 .btn-skip:hover {
-  background-color: #f9fafb;
+  background-color: rgb(249 250 251);
 }
 
 .btn-skip:focus {
-  outline-color: #9ca3af;
+  outline-color: rgb(156 163 175);
 }
 
 .btn-icon {
   padding: 0.5rem;
   border-radius: 0.375rem;
-  color: #6b7280;
+  color: rgb(107 114 128);
 }
 
 .btn-icon:hover {
-  background-color: #f3f4f6;
+  background-color: rgb(243 244 246);
 }
 
 .btn-icon:focus {
-  outline-color: #9ca3af;
+  outline-color: rgb(156 163 175);
 }
 
 .form-field {
@@ -321,7 +321,7 @@ body {
   display: block;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #374151;
+  color: rgb(55 65 81);
 }
 
 .form-field input[type="text"],
@@ -330,38 +330,38 @@ body {
 .form-field textarea {
   width: 100%;
   padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
+  border: 1px solid rgb(209 213 219);
   border-radius: 0.375rem;
   box-shadow: 0 1px 2px 0 rgb(0 0 0 / 5%);
   outline: 2px solid transparent;
   outline-offset: 2px;
 }
 
-.form-field input[type="text"]:focus,
-.form-field input[type="range"]:focus,
-.form-field select:focus,
-.form-field textarea:focus {
-  outline: 2px solid #0ea5e9;
-  border-color: #0ea5e9;
-}
-
 .form-field textarea {
   resize: none;
 }
 
+.form-field input[type="text"]:focus,
+.form-field input[type="range"]:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+  outline: 2px solid rgb(14 165 233);
+  border-color: rgb(14 165 233);
+}
+
 .status-badge.pending {
-  background-color: #fef3c7;
-  color: #92400e;
+  background-color: rgb(254 243 199);
+  color: rgb(146 64 14);
 }
 
 .status-badge.submitted {
-  background-color: #d1fae5;
-  color: #065f46;
+  background-color: rgb(209 250 229);
+  color: rgb(6 95 70);
 }
 
 .status-badge.skipped {
-  background-color: #f3f4f6;
-  color: #1f2937;
+  background-color: rgb(243 244 246);
+  color: rgb(31 41 55);
 }
 
 .stat {
@@ -370,15 +370,15 @@ body {
 }
 
 .stat.pending {
-  color: #d97706;
+  color: rgb(217 119 6);
 }
 
 .stat.submitted {
-  color: #059669;
+  color: rgb(5 150 105);
 }
 
 .stat.skipped {
-  color: #4b5563;
+  color: rgb(75 85 99);
 }
 
 /* Status message styles (restored from old popup.css) */
@@ -393,25 +393,25 @@ body {
 }
 
 .status-message.success {
-  background-color: #ecfdf3;
-  border-color: #4ade80;
-  color: #166534;
+  background-color: rgb(236 253 243);
+  border-color: rgb(74 222 128);
+  color: rgb(22 101 52);
 }
 
 .status-message.error {
-  background-color: #fef2f2;
-  border-color: #fca5a5;
-  color: #b91c1c;
+  background-color: rgb(254 242 242);
+  border-color: rgb(252 165 165);
+  color: rgb(185 28 28);
 }
 
 .status-message.info {
-  background-color: #eff6ff;
-  border-color: #93c5fd;
-  color: #1d4ed8;
+  background-color: rgb(239 246 255);
+  border-color: rgb(147 197 253);
+  color: rgb(29 78 216);
 }
 
 dialog::backdrop {
-  background: rgba(0, 0, 0, 0.4);
+  background: rgb(0 0 0 / 40%);
 }
 
 /* Summary item styles used by confirmation.js (restored from old popup.css) */
@@ -426,11 +426,11 @@ dialog::backdrop {
 
 .summary-label {
   font-weight: 500;
-  color: #4b5563;
+  color: rgb(75 85 99);
 }
 
 .summary-value {
-  color: #111827;
+  color: rgb(17 24 39);
   text-align: right;
   margin-left: 0.5rem;
 }

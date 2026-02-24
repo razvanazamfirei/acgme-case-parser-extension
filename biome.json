@@ -1,6 +1,10 @@
 {
-  "root": true,
   "$schema": "https://biomejs.dev/schemas/2.4.4/schema.json",
+  "root": true,
+  "vcs": {
+    "clientKind": "git",
+    "enabled": true
+  },
   "linter": {
     "enabled": true,
     "rules": {
@@ -26,7 +30,7 @@
     "indentWidth": 2,
     "lineWidth": 80,
     "attributePosition": "auto",
-    "bracketSameLine": false,
+    "bracketSameLine": true,
     "bracketSpacing": true,
     "expand": "auto",
     "useEditorconfig": true
@@ -38,14 +42,17 @@
       "trailingCommas": "all",
       "semicolons": "always",
       "arrowParentheses": "always",
-      "bracketSameLine": false,
+      "bracketSameLine": true,
       "quoteStyle": "double",
       "attributePosition": "auto",
       "bracketSpacing": true
     }
   },
   "html": {
+    "experimentalFullSupportEnabled": true,
     "formatter": {
+      "enabled": true,
+      "bracketSameLine": true,
       "indentScriptAndStyle": false,
       "selfCloseVoidElements": "always"
     }

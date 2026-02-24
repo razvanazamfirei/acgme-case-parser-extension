@@ -2,8 +2,6 @@
 
 Version: `1.3.3`
 
-This is a simple guide you can share directly with residents/faculty.
-
 ## What this extension does
 
 ACGME Case Submitter imports a standardized case-log spreadsheet and helps you fill the ADS Case Entry form on:
