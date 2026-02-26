@@ -548,7 +548,10 @@ const EventHandlers = {
       const submitBtn = UI.get(DOM.fillSubmitBtn);
       submitBtn.disabled = true;
       try {
-        await ACGMEForm.fill(true);
+        const result = await ACGMEForm.fill(true);
+        if (result?.success && result?.submitted) {
+          setTimeout(() => Navigation.goToNextPending(), 1000);
+        }
       } finally {
         // Always re-enable the button after submission attempt
         submitBtn.disabled = false;
