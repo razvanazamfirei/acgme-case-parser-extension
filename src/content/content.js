@@ -763,7 +763,7 @@ function getVisibleErrors() {
   // danger alerts added by appendAlert() (used for "At least 1 selection is
   // required" and other client-side errors on this form).
   const errorEls = document.querySelectorAll(
-    ".field-validation-error, .validation-summary-errors, .alert-danger",
+    ".field-validation-error, .validation-summary-errors, #clienterrors .alert-danger",
   );
   const errors = [];
   for (const el of errorEls) {

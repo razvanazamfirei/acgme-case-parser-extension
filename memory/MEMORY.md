@@ -5,10 +5,12 @@
 Source: `mock-website/` (minified JS in `core-caselogs`, `core-internal`)
 
 ### Submit button
+
 - ID: `submitButton` (not `btnSave`)
 - Type: `type="submit"` inside a `<form action=".../insert" method="post">`
 
 ### Submit flow (jQuery-based, traditional POST)
+
 Two submit handlers are registered on the form:
 1. **caseEntry040 handler** — for anesthesia-style cases with `cbprocedureid` checkboxes:
    - Always calls `n.preventDefault()`
@@ -20,22 +22,26 @@ Two submit handlers are registered on the form:
 2. **onSubmitCaseEntryForm** — for CPT-based cases (not anesthesia): uses `BuildSelectedCodes()` from `.selectedCodesBody li`, then `onSubmitCaseEntryFormConfirmed()` → same `$("form").off().submit()`
 
 ### On success: page navigates away
+
 - Content script is destroyed mid-wait
 - Popup gets `chrome.runtime.lastError: "The message channel closed before a response was received"`
 - This is the correct signal for a successful submission
 
 ### Error locations (when submission is blocked)
+
 - `.field-validation-error` — jQuery unobtrusive validation per-field errors (required fields: Supervisor, Site, Patient Age, Date)
 - `.validation-summary-errors` — jQuery validation summary
 - `.alert-danger` inside `#clienterrors` — created by `appendAlert()` for "At least 1 selection is required" and similar
 
 ### Validation libraries
+
 - `jquery.validate.min.js` + `jquery.validate.unobtrusive.min.js`
 - Bootstrap 5 for alerts/UI
 - Select2 for Attendings dropdown (`select2-hidden-accessible` class)
 - jQuery UI datepicker for date field with inputmask (`99/99/9999`)
 
 ### SelectedCodes hidden input
+
 `SelectAll040Cpts` builds a comma-separated string of checkbox IDs (`.cbprocedureid:checked`) and radio values (excluding `CaseTypes_` IDs) and stores it in `input[id=SelectedCodes]`.
 
 ## Bug Fixes Applied (v1.3.6)
