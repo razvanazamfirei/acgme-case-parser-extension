@@ -81,11 +81,20 @@ export const ACGMEForm = {
             { action: "submitCase" },
             (response) => {
               if (chrome.runtime.lastError) {
-                console.error("Error submitting:", chrome.runtime.lastError);
-                resolve({
-                  success: false,
-                  errors: ["Submit command failed in the ACGME page."],
-                });
+                const msg = chrome.runtime.lastError.message || "";
+                // "The message channel closed before a response was received"
+                // means the content script was destroyed mid-wait because the
+                // page navigated away — that is exactly what ACGME does on a
+                // successful save. Treat it as success.
+                if (/message (?:channel|port) closed/i.test(msg)) {
+                  resolve({ success: true });
+                } else {
+                  console.error("Error submitting:", chrome.runtime.lastError);
+                  resolve({
+                    success: false,
+                    errors: ["Submit command failed in the ACGME page."],
+                  });
+                }
                 return;
               }
               resolve(response);
@@ -148,7 +157,13 @@ export const ACGMEForm = {
       UI.showStatus(msg, hasWarnings ? "info" : "success");
       Navigation.update();
       Storage.saveState();
-      setTimeout(() => Navigation.goToNextPending(), 1000);
+    } else if (andSubmit && !result.submitted) {
+      const errors = result.errors || [];
+      const msg =
+        errors.length > 0
+          ? `Submit failed: ${errors.join("; ")}`
+          : "Submit failed. Check the form for errors.";
+      UI.showStatus(msg, "error");
     } else {
       let msg = "Form filled! Review and submit on the ACGME page.";
       if (hasWarnings) {

@@ -758,9 +758,28 @@ function fillCase(caseData) {
   return result;
 }
 
-function submitCase() {
-  // Try multiple selectors for the submit button
+function getVisibleErrors() {
+  // jQuery unobtrusive validation field errors and summary, plus Bootstrap
+  // danger alerts added by appendAlert() (used for "At least 1 selection is
+  // required" and other client-side errors on this form).
+  const errorEls = document.querySelectorAll(
+    ".field-validation-error, .validation-summary-errors, #clienterrors .alert-danger",
+  );
+  const errors = [];
+  for (const el of errorEls) {
+    const text = el.textContent.trim();
+    if (text && el.offsetParent !== null) {
+      errors.push(text);
+    }
+  }
+  return [...new Set(errors)];
+}
+
+async function submitCase() {
+  // Primary selector matches the actual ACGME submit button id; fallbacks
+  // are kept in case the page structure changes.
   const submitBtn =
+    document.getElementById("submitButton") ||
     document.getElementById("btnSave") ||
     document.querySelector('button[type="submit"]') ||
     document.querySelector('input[type="submit"]') ||
@@ -771,13 +790,26 @@ function submitCase() {
   if (!submitBtn) {
     console.error("Submit button not found");
     console.log("Available buttons:", document.querySelectorAll("button"));
-    return false;
+    return { success: false, errors: ["Submit button not found."] };
   }
 
   console.log("Found submit button:", submitBtn);
   submitBtn.click();
   console.log("Submit button clicked");
-  return true;
+
+  // Wait briefly for synchronous client-side validation to run.
+  // If the submission succeeds ACGME will navigate away and this script
+  // will be destroyed before sendResponse is called — the popup handles
+  // that case by treating "message channel closed" as a success signal.
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  const errors = getVisibleErrors();
+  if (errors.length > 0) {
+    console.warn("Validation errors detected after submit:", errors);
+    return { success: false, errors };
+  }
+
+  return { success: true };
 }
 
 // Listen for messages from the popup
@@ -785,9 +817,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.action === "fillCase") {
     try {
       const result = fillCase(message.data);
-      if (message.autoSubmit) {
-        result.submitted = submitCase();
-      }
       sendResponse({ success: true, result });
     } catch (error) {
       console.error("Error filling case:", error);
@@ -797,17 +826,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 
   if (message.action === "submitCase") {
-    try {
-      const submitted = submitCase();
-      if (submitted) {
-        sendResponse({ success: true });
-      } else {
-        sendResponse({ success: false, errors: ["Submit button not found."] });
-      }
-    } catch (error) {
-      console.error("Error submitting case:", error);
-      sendResponse({ success: false, errors: [error.message] });
-    }
+    submitCase()
+      .then((result) => sendResponse(result))
+      .catch((error) => {
+        console.error("Error submitting case:", error);
+        sendResponse({ success: false, errors: [error.message] });
+      });
     return true;
   }
 
