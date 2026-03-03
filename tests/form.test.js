@@ -105,9 +105,9 @@ describe("Form", () => {
     });
 
     it("partial match when input starts with option value", () => {
-      const result = Form.setSelect("matchedSelect", "a opt"); // starts with "a"? no.
+      const result = Form.setSelect("matchedSelect", "a opt");
       // fallback: partial match — 'a opt'.startsWith('a') → true
-      expect(["partial", "exact", "none"]).toContain(result.type);
+      expect(result.type).toBe("partial");
     });
 
     it("returns none when no match found", () => {
@@ -166,7 +166,7 @@ describe("Form", () => {
         '<input type="checkbox" name="airway" value="LMA Extended" />',
       );
       const result = Form.setCheckboxGroup("airway", "Oral ETT; LMA Ex");
-      expect(["exact", "partial"]).toContain(result.type);
+      expect(result.type).toBe("partial");
     });
 
     it("tracks unmatched values", () => {

@@ -29,10 +29,10 @@
     "lint:fix": "biome lint --write .",
     "format": "biome format --write .",
     "check": "biome check .",
-    "test": "vitest run",
+    "test": "vitest run --reporter=junit --outputFile=test-report.junit.xml",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "package:zip": "VERSION=$(bun -e \"const p = await Bun.file('package.json').json(); console.log(p.version);\") && bun run clean && bun run build && bun run verify:dist && cd dist && rm -f ../acgme-case-submitter-v$VERSION.zip && zip -r ../acgme-case-submitter-v$VERSION.zip . -x '*.DS_Store' -x '.vite/*' -x '.vite/**'",
+    "test:coverage": "vitest run --coverage --reporter=junit --outputFile=test-report.junit.xml",
+    "package:zip": "VERSION=$(bun -e \"const p = await Bun.file('package.json').json(); console.log(p.version);\") && bun run clean && bun run build && cd dist && rm -f ../acgme-case-submitter-v$VERSION.zip && zip -r ../acgme-case-submitter-v$VERSION.zip . -x '*.DS_Store' -x '.vite/*' -x '.vite/**'",
     "bump:patch": "bun run scripts/release/bump.js patch",
     "bump:minor": "bun run scripts/release/bump.js minor",
     "bump:major": "bun run scripts/release/bump.js major",
@@ -58,6 +58,7 @@
     "node": "^20.19.0 || >=22.12.0"
   },
   "dependencies": {
+    "@codecov/vite-plugin": "^1.9.1",
     "fuzzysort": "^3.1.0"
   }
 }

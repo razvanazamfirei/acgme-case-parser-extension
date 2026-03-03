@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Excel } from "../src/popup/excel.js";
 
 // ---------------------------------------------------------------------------
@@ -605,8 +605,14 @@ describe("Excel.getString", () => {
 // ---------------------------------------------------------------------------
 
 describe("Excel.parseFile", () => {
+  const originalFileReader = global.FileReader;
+
   beforeEach(() => {
     vi.resetAllMocks();
+  });
+
+  afterEach(() => {
+    global.FileReader = originalFileReader;
   });
 
   function mockFileReader(result) {

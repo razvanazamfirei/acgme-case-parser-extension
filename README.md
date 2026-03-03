@@ -67,7 +67,6 @@ bun run lint
 bun run lint:fix
 bun run format
 bun run check
-bun run verify:dist
 ```
 
 If you prefer Bun, `bun run <script>` works with the same script names.

@@ -22,7 +22,6 @@ bun run dev
 bun run build
 bun run build:dev
 bun run clean
-bun run verify:dist
 ```
 
 ## Local Packaging

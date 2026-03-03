@@ -114,7 +114,7 @@ function buildAppDOM() {
       <button id="confirmDialogCancel">Cancel</button>
     </dialog>
     <span id="appVersion"></span>
-    <div id="settingInstitution"></div>
+    <div id="settingInstitutionContainer"></div>
     <input type="text" id="settingDefaultAttending" value="" />
     <input type="checkbox" id="settingCardiacAutoFill" />
     <input type="checkbox" id="settingAuto5EPathology" />

@@ -381,12 +381,9 @@ describe("findAttendingId", () => {
         <option value="101">JONES, MARY A</option>
         <option value="105">JONES, MARY B</option>
       </select>`;
-    // Both match JONES, MARY → should return null or one - implementation returns first name-match
-    // Both have exact last+first "JONES, MARY" but differ in middle initial
-    // The function collects matches; with 2 name-matches it proceeds to initial-match or null
-    const result = findAttendingId("JONES, MARY");
-    // We just verify it doesn't throw; the value may be non-null due to middle name flexibility
-    expect(typeof result === "string" || result === null).toBe(true);
+    // Both have exact last+first "JONES, MARY" but differ in middle initial.
+    // This should remain ambiguous and resolve to null.
+    expect(findAttendingId("JONES, MARY")).toBeNull();
   });
 
   it("returns all matches when returnAllMatches=true", () => {
@@ -433,9 +430,8 @@ describe("findAttendingId", () => {
       <select id="Attendings">
         <option value="200">SMITH</option>
       </select>`;
-    // No name-based match; fuzzysort may or may not find something
-    const result = findAttendingId("SMITH, J");
-    expect(typeof result === "string" || result === null).toBe(true);
+    // No name-based match; fuzzy fallback should not satisfy the confidence threshold.
+    expect(findAttendingId("SMITH, J")).toBeNull();
   });
 
   it("returns value via fuzzy match when no name-based match exists", () => {
