@@ -291,11 +291,7 @@ function findAttendingId(name, returnAllMatches = false) {
 
     // Exact match (normalized)
     if (optNormalized === nameNormalized) {
-      if (returnAllMatches) {
-        matches.push({ value: opt.value, text: opt.text, matchType: "exact" });
-      } else {
-        return opt.value;
-      }
+      matches.push({ value: opt.value, text: opt.text, matchType: "exact" });
       continue;
     }
 

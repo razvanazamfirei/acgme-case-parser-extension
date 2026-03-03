@@ -6,7 +6,11 @@
       "Bash(identify:*)",
       "Bash(rsvg-convert:*)",
       "Bash(gh repo view:*)",
-      "Bash(perl:*)"
+      "Bash(perl:*)",
+      "Skill(commit-commands:commit-push-pr)",
+      "Bash(bun:*)",
+      "Bash(npm run:*)",
+      "Bash(npm test:*)"
     ]
   }
 }
