@@ -378,20 +378,23 @@ describe("App components", () => {
 
     it("shows delayed success status after clearing", async () => {
       vi.useFakeTimers();
-      const dialog = document.getElementById("confirmDialog");
-      dialog.showModal = vi.fn();
-      dialog.close = vi.fn();
-      Storage.clearState.mockResolvedValue(undefined);
+      try {
+        const dialog = document.getElementById("confirmDialog");
+        dialog.showModal = vi.fn();
+        dialog.close = vi.fn();
+        Storage.clearState.mockResolvedValue(undefined);
 
-      const clearPromise = Session.clear();
-      document.getElementById("confirmDialogOk").click();
-      await clearPromise;
-      await vi.advanceTimersByTimeAsync(100);
+        const clearPromise = Session.clear();
+        document.getElementById("confirmDialogOk").click();
+        await clearPromise;
+        await vi.advanceTimersByTimeAsync(100);
 
-      expect(document.getElementById("statusMessage").textContent).toContain(
-        "Session cleared - ready for new file",
-      );
-      vi.useRealTimers();
+        expect(document.getElementById("statusMessage").textContent).toContain(
+          "Session cleared - ready for new file",
+        );
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 
@@ -419,7 +422,12 @@ describe("App components", () => {
           "ACGME Case Submitter initialized successfully",
         );
       } finally {
-        process.env.NODE_ENV = previousEnv;
+        if (previousEnv === undefined) {
+          delete process.env.NODE_ENV;
+        } else {
+          process.env.NODE_ENV = previousEnv;
+        }
+        logSpy.mockRestore();
       }
     });
 
@@ -902,19 +910,22 @@ describe("App components", () => {
 
     it("fillSubmitBtn schedules goToNextPending after successful submit", async () => {
       vi.useFakeTimers();
-      Form.validate.mockReturnValue({
-        isValid: true,
-        missing: [],
-        warnings: [],
-        hasWarnings: false,
-      });
-      ACGMEForm.fill.mockResolvedValue({ success: true, submitted: true });
+      try {
+        Form.validate.mockReturnValue({
+          isValid: true,
+          missing: [],
+          warnings: [],
+          hasWarnings: false,
+        });
+        ACGMEForm.fill.mockResolvedValue({ success: true, submitted: true });
 
-      document.getElementById("fillSubmitBtn").click();
-      await vi.runAllTimersAsync();
+        document.getElementById("fillSubmitBtn").click();
+        await vi.runAllTimersAsync();
 
-      expect(Navigation.goToNextPending).toHaveBeenCalled();
-      vi.useRealTimers();
+        expect(Navigation.goToNextPending).toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it("fillSubmitBtn with invalid form shows warning but still fills", async () => {
@@ -1089,7 +1100,12 @@ describe("App components", () => {
         EventHandlers.register();
         expect(errorSpy).toHaveBeenCalledWith("Element not found: uploadBtn");
       } finally {
-        process.env.NODE_ENV = previousEnv;
+        if (previousEnv === undefined) {
+          delete process.env.NODE_ENV;
+        } else {
+          process.env.NODE_ENV = previousEnv;
+        }
+        errorSpy.mockRestore();
       }
     });
 
@@ -1106,7 +1122,12 @@ describe("App components", () => {
         );
         expect(logSpy).toHaveBeenCalledWith("Button clicked: nextBtn");
       } finally {
-        process.env.NODE_ENV = previousEnv;
+        if (previousEnv === undefined) {
+          delete process.env.NODE_ENV;
+        } else {
+          process.env.NODE_ENV = previousEnv;
+        }
+        logSpy.mockRestore();
       }
     });
   });
