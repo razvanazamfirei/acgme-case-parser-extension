@@ -2,6 +2,11 @@ name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (vX.Y.Z)"
+        required: true
+        type: string
   push:
     tags:
       - "v*.*.*"
@@ -12,15 +17,25 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref }}
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
       - name: Validate tag matches package and manifest version
         id: meta
         run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          TAG_NAME="${RELEASE_TAG}"
+          if [[ ! "$TAG_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release tag must match vX.Y.Z. Received: $TAG_NAME"
+            exit 1
+          fi
+
+          TAG_VERSION="${TAG_NAME#v}"
           PKG_VERSION=$(bun -e "const p = await Bun.file('package.json').json(); console.log(p.version);")
           MANIFEST_VERSION=$(bun -e "const m = await Bun.file('manifest.json').json(); console.log(m.version);")
 
@@ -43,10 +58,9 @@ jobs:
       - name: Build and package
         run: bun run package:zip
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
+          tag_name: ${{ env.RELEASE_TAG }}
           name: v${{ steps.meta.outputs.version }}
           generate_release_notes: true
           files: ${{ steps.meta.outputs.zip }}

@@ -653,15 +653,27 @@ const App = {
   },
 };
 
+let appInitialized = false;
+
+function initializeAppOnce() {
+  if (appInitialized) {
+    return;
+  }
+  appInitialized = true;
+  void App.init();
+}
+
 function initializeAppOnLoad(mode = import.meta.env.MODE, doc = document) {
   if (mode === "test") {
     return;
   }
 
   if (doc.readyState === "loading") {
-    doc.addEventListener("DOMContentLoaded", () => App.init());
+    doc.addEventListener("DOMContentLoaded", initializeAppOnce, {
+      once: true,
+    });
   } else {
-    App.init();
+    initializeAppOnce();
   }
 }
 
@@ -674,6 +686,9 @@ if (import.meta.env.MODE === "test") {
     EventHandlers,
     App,
     initializeAppOnLoad,
+    resetAppInitializationForTests: () => {
+      appInitialized = false;
+    },
   };
 }
 

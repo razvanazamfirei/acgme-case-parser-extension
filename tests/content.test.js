@@ -470,8 +470,11 @@ describe("findAttendingId", () => {
       },
     ]);
 
-    expect(findAttendingId("UNKNOWN DOCTOR")).toBeNull();
-    goSpy.mockRestore();
+    try {
+      expect(findAttendingId("UNKNOWN DOCTOR")).toBeNull();
+    } finally {
+      goSpy.mockRestore();
+    }
   });
 });
 

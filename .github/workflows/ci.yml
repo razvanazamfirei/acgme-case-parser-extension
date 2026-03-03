@@ -22,7 +22,7 @@ jobs:
       - name: Run checks
         run: bun run check
       - name: Run build
-        run: bun run build
+        run: bun run build:ci
       - name: Run tests with coverage
         run: bun run test:coverage
       - name: Upload coverage artifact
@@ -36,7 +36,7 @@ jobs:
         if: ${{ !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
         uses: codecov/codecov-action@v5
         with:
-          files: ./junit.xml
+          files: ./test-report.junit.xml
           report_type: test_results
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload coverage to Codecov

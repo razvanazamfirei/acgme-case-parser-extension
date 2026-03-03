@@ -3,15 +3,19 @@ import { crx } from "@crxjs/vite-plugin";
 import { defineConfig } from "vite";
 import manifest from "./manifest.json";
 
+const shouldUseCodecovVitePlugin = process.env.CODECOV_VITE_PLUGIN === "true";
+
 export default defineConfig({
   plugins: [
     crx({ manifest }),
-    codecovVitePlugin({
-      enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
-      bundleName: "acgme-case-parser-extension",
-      uploadToken: process.env.CODECOV_TOKEN,
-    }),
-  ],
+    shouldUseCodecovVitePlugin &&
+      codecovVitePlugin({
+        enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
+        bundleName: "acgme-case-parser-extension",
+        uploadToken: process.env.CODECOV_TOKEN,
+        telemetry: false,
+      }),
+  ].filter(Boolean),
   publicDir: "public",
   build: {
     outDir: "dist",

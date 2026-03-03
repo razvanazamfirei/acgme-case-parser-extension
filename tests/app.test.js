@@ -66,6 +66,7 @@ const {
   Metadata,
   Session,
   initializeAppOnLoad,
+  resetAppInitializationForTests,
 } = appTestApi;
 
 function buildAppDOM() {
@@ -429,6 +430,10 @@ describe("App components", () => {
   });
 
   describe("initializeAppOnLoad()", () => {
+    beforeEach(() => {
+      resetAppInitializationForTests();
+    });
+
     it("registers DOMContentLoaded handler when document is loading", () => {
       const addEventListener = vi.fn();
       const loadingDoc = { readyState: "loading", addEventListener };
@@ -438,6 +443,7 @@ describe("App components", () => {
       expect(addEventListener).toHaveBeenCalledWith(
         "DOMContentLoaded",
         expect.any(Function),
+        { once: true },
       );
     });
 
@@ -457,6 +463,26 @@ describe("App components", () => {
       initializeAppOnLoad("test", readyDoc);
 
       expect(initSpy).not.toHaveBeenCalled();
+    });
+
+    it("initializes only once when called repeatedly during loading", () => {
+      const initSpy = vi.spyOn(App, "init").mockResolvedValue(undefined);
+      const listeners = new Map();
+      const loadingDoc = {
+        readyState: "loading",
+        addEventListener: vi.fn((eventName, handler) => {
+          listeners.set(eventName, handler);
+        }),
+      };
+
+      initializeAppOnLoad("development", loadingDoc);
+      initializeAppOnLoad("development", loadingDoc);
+
+      const onDomContentLoaded = listeners.get("DOMContentLoaded");
+      onDomContentLoaded();
+      onDomContentLoaded();
+
+      expect(initSpy).toHaveBeenCalledTimes(1);
     });
   });
 
