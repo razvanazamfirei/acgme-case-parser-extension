@@ -92,6 +92,23 @@ export const OPTIONAL_COLUMNS = [
 
 export const EXPECTED_COLUMNS = [...REQUIRED_COLUMNS, ...OPTIONAL_COLUMNS];
 
+export const STANDALONE_REQUIRED_COLUMNS = [
+  "Case ID",
+  "Case Date",
+  "Supervisor",
+  "Original Procedure",
+  "ASA Physical Status",
+  "Procedure Category",
+  "Procedure Name",
+];
+
+export const STANDALONE_OPTIONAL_COLUMNS = ["Primary Block"];
+
+export const STANDALONE_EXPECTED_COLUMNS = [
+  ...STANDALONE_REQUIRED_COLUMNS,
+  ...STANDALONE_OPTIONAL_COLUMNS,
+];
+
 export const STORAGE_KEYS = {
   cases: "acgme_cases",
   currentIndex: "acgme_currentIndex",

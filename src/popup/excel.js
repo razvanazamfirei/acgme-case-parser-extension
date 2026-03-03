@@ -6,7 +6,26 @@ import {
   EXPECTED_COLUMNS,
   OPTIONAL_COLUMNS,
   REQUIRED_COLUMNS,
+  STANDALONE_EXPECTED_COLUMNS,
+  STANDALONE_OPTIONAL_COLUMNS,
+  STANDALONE_REQUIRED_COLUMNS,
 } from "./constants.js";
+
+// Maps standalone "Procedure Name" values to caseData fields
+const STANDALONE_PROCEDURE_MAP = {
+  "Intubation routine": { anesthesia: "GA", airway: "Oral ETT" },
+  LMA: { anesthesia: "GA", airway: "LMA" },
+  "Arterial line": { vascularAccess: "Arterial Catheter" },
+  Epidural: { anesthesia: "Epidural" },
+  CSE: { anesthesia: "CSE" },
+  Spinal: { anesthesia: "Spinal" },
+  "Peripheral nerve block": { anesthesia: "PNB Single" },
+};
+
+// Normalized (lowercase) lookup built once to handle source casing differences
+const STANDALONE_PROCEDURE_MAP_LOWER = Object.fromEntries(
+  Object.entries(STANDALONE_PROCEDURE_MAP).map(([k, v]) => [k.toLowerCase(), v]),
+);
 
 export const Excel = {
   async parseFile(file) {
@@ -17,7 +36,13 @@ export const Excel = {
         try {
           const data = new Uint8Array(e.target.result);
           const workbook = XLSX.read(data, { type: "array" });
-          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const meta = this.readMeta(workbook);
+          const dataSheetName = workbook.SheetNames.find((n) => n !== "_meta");
+          if (!dataSheetName) {
+            reject(new Error("No data sheet found"));
+            return;
+          }
+          const firstSheet = workbook.Sheets[dataSheetName];
           const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
 
           if (rows.length < 2) {
@@ -25,7 +50,7 @@ export const Excel = {
             return;
           }
 
-          const result = this.parseRows(rows);
+          const result = this.parseRows(rows, meta);
           resolve(result);
         } catch (err) {
           reject(err);
@@ -37,9 +62,44 @@ export const Excel = {
     });
   },
 
-  parseRows(rows) {
+  readMeta(workbook) {
+    const metaSheet = workbook.Sheets._meta;
+    if (!metaSheet) {
+      return { version: "1", formatType: "caselog" };
+    }
+
+    const rows = XLSX.utils.sheet_to_json(metaSheet, { header: 1 });
+    const meta = {};
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (row?.[0] && row[1] !== undefined) {
+        meta[row[0]] = String(row[1]);
+      }
+    }
+
+    return {
+      version: meta.version || "1",
+      formatType: (meta.format_type || "caselog").trim().toLowerCase(),
+    };
+  },
+
+  parseRows(rows, meta = {}) {
+    const { formatType = "caselog" } = meta;
+
+    if (formatType === "standalone") {
+      return this.parseStandaloneRows(rows);
+    }
+    return this.parseCaselogRows(rows);
+  },
+
+  parseCaselogRows(rows) {
     const headers = rows[0].map((h) => String(h || "").trim());
-    const mappingResult = this.mapColumns(headers);
+    const mappingResult = this.mapColumns(
+      headers,
+      EXPECTED_COLUMNS,
+      REQUIRED_COLUMNS,
+      OPTIONAL_COLUMNS,
+    );
     if (mappingResult.missingRequired.length > 0) {
       throw new Error(
         `Missing required columns: ${mappingResult.missingRequired.join(", ")}`,
@@ -96,22 +156,91 @@ export const Excel = {
     return { cases, mappingResult };
   },
 
-  mapColumns(headers) {
+  parseStandaloneRows(rows) {
+    const headers = rows[0].map((h) => String(h || "").trim());
+    const mappingResult = this.mapColumns(
+      headers,
+      STANDALONE_EXPECTED_COLUMNS,
+      STANDALONE_REQUIRED_COLUMNS,
+      STANDALONE_OPTIONAL_COLUMNS,
+    );
+    if (mappingResult.missingRequired.length > 0) {
+      throw new Error(
+        `Missing required columns: ${mappingResult.missingRequired.join(", ")}`,
+      );
+    }
+
+    const colIndex = mappingResult.colIndex;
+    const cases = [];
+    const unknownProcedures = new Set();
+
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.length === 0) {
+        continue;
+      }
+
+      const procedureName = this.getString(row, colIndex["Procedure Name"]);
+      const primaryBlock = this.getString(row, colIndex["Primary Block"]);
+      const procedureNameLower = procedureName.toLowerCase();
+      const procedureFields = STANDALONE_PROCEDURE_MAP_LOWER[procedureNameLower] || {};
+      const knownProcedure = procedureName && Object.hasOwn(STANDALONE_PROCEDURE_MAP_LOWER, procedureNameLower);
+      if (procedureName && !knownProcedure) {
+        unknownProcedures.add(procedureName);
+      }
+
+      let comments = this.getString(row, colIndex["Original Procedure"]);
+      if (primaryBlock) {
+        comments = comments
+          ? `${comments} | Block: ${primaryBlock}`
+          : `Block: ${primaryBlock}`;
+      }
+
+      const caseData = {
+        caseId: this.getString(row, colIndex["Case ID"]),
+        date: this.formatDate(row[colIndex["Case Date"]]),
+        attending: this.getString(row, colIndex.Supervisor),
+        ageCategory: "",
+        comments,
+        asa: this.getString(row, colIndex["ASA Physical Status"]),
+        anesthesia: procedureFields.anesthesia || "",
+        airway: procedureFields.airway || "",
+        difficultAirway: "",
+        procedureCategory: this.getString(row, colIndex["Procedure Category"]),
+        vascularAccess: procedureFields.vascularAccess || "",
+        monitoring: "",
+      };
+
+      if (caseData.caseId) {
+        cases.push(caseData);
+      }
+    }
+
+    if (unknownProcedures.size > 0) {
+      mappingResult.warnings = [
+        `Unknown procedure names (fields left blank): ${[...unknownProcedures].join(", ")}`,
+      ];
+    }
+
+    return { cases, mappingResult };
+  },
+
+  mapColumns(headers, expectedCols, requiredCols, optionalCols) {
     const colIndex = {};
     const mapped = [];
     const missing = [];
     const missingRequired = [];
     const missingOptional = [];
 
-    EXPECTED_COLUMNS.forEach((col) => {
+    expectedCols.forEach((col) => {
       const idx = headers.findIndex(
         (h) => h.toLowerCase() === col.toLowerCase(),
       );
       if (idx === -1) {
         missing.push(col);
-        if (REQUIRED_COLUMNS.includes(col)) {
+        if (requiredCols.includes(col)) {
           missingRequired.push(col);
-        } else if (OPTIONAL_COLUMNS.includes(col)) {
+        } else if (optionalCols.includes(col)) {
           missingOptional.push(col);
         }
       } else {
@@ -126,12 +255,12 @@ export const Excel = {
       missing,
       missingRequired,
       missingOptional,
-      totalExpected: EXPECTED_COLUMNS.length,
+      totalExpected: expectedCols.length,
       totalMapped: mapped.length,
-      requiredExpected: REQUIRED_COLUMNS.length,
-      requiredMapped: REQUIRED_COLUMNS.length - missingRequired.length,
-      optionalExpected: OPTIONAL_COLUMNS.length,
-      optionalMapped: OPTIONAL_COLUMNS.length - missingOptional.length,
+      requiredExpected: requiredCols.length,
+      requiredMapped: requiredCols.length - missingRequired.length,
+      optionalExpected: optionalCols.length,
+      optionalMapped: optionalCols.length - missingOptional.length,
     };
   },
 
@@ -157,12 +286,12 @@ export const Excel = {
 
     if (typeof val === "number") {
       const date = new Date((val - 25569) * 86400 * 1000);
-      return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+      return `${date.getUTCMonth() + 1}/${date.getUTCDate()}/${date.getUTCFullYear()}`;
     }
 
     const d = new Date(val);
     if (!Number.isNaN(d.getTime())) {
-      return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
+      return `${d.getUTCMonth() + 1}/${d.getUTCDate()}/${d.getUTCFullYear()}`;
     }
 
     return String(val);

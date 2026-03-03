@@ -2,9 +2,19 @@
 dist/
 
 # Development
-node_modules/
-.DS_Store
 .idea/
-USER_GUIDE.pdf
-*.zip
+node_modules/
+
+# Testing
+coverage/
+
+# Local website mocks
+example/
 mock-website/
+
+# Release
+*.zip
+
+# Miscellaneous
+.DS_Store
+USER_GUIDE.pdf
