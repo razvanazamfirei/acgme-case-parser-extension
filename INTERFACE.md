@@ -258,8 +258,7 @@ Response:
 ## Parser Compatibility
 
 The caselog format contract matches the case-parser standardized output headers
-currently produced in
-`/Users/razvanazamfirei/Projects/random/case-parser/src/case_parser/domain.py`.
+produced by the companion `case-parser` tool (see its `domain.py` module).
 
 The standalone format is produced by the same tool when exporting individual
 procedures (e.g., nerve blocks) as a separate sheet with a `_meta` sheet
