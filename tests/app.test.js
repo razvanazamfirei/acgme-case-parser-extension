@@ -58,8 +58,16 @@ if (!appTestApi) {
   throw new Error("Expected __APP_TEST_API__ to be available in test mode.");
 }
 
-const { App, BeastMode, EventHandlers, FileUpload, Metadata, Session } =
-  appTestApi;
+const {
+  App,
+  BeastMode,
+  EventHandlers,
+  FileUpload,
+  Metadata,
+  Session,
+  initializeAppOnLoad,
+  resetAppInitializationForTests,
+} = appTestApi;
 
 function buildAppDOM() {
   document.body.innerHTML = `
@@ -293,6 +301,101 @@ describe("App components", () => {
 
       expect(Storage.clearState).not.toHaveBeenCalled();
     });
+
+    it("resets checkbox and radio groups when clearing", async () => {
+      vi.useFakeTimers();
+      try {
+        const dialog = document.getElementById("confirmDialog");
+        dialog.showModal = vi.fn();
+        dialog.close = vi.fn();
+        Storage.clearState.mockResolvedValue(undefined);
+
+        document.body.insertAdjacentHTML(
+          "beforeend",
+          `
+            <input type="checkbox" name="airway" value="Oral ETT" checked />
+            <input type="checkbox" name="vascular" value="Arterial Catheter" checked />
+            <input type="checkbox" name="monitoring" value="TEE" checked />
+            <input type="radio" name="difficultAirway" value="" />
+            <input type="radio" name="difficultAirway" value="Unanticipated" checked />
+            <input type="radio" name="lifeThreateningPathology" value="" />
+            <input type="radio" name="lifeThreateningPathology" value="Trauma" checked />
+          `,
+        );
+
+        const clearPromise = Session.clear();
+        document.getElementById("confirmDialogOk").click();
+        await clearPromise;
+        await vi.runAllTimersAsync();
+
+        expect(
+          document.querySelector('input[name="airway"][value="Oral ETT"]')
+            .checked,
+        ).toBe(false);
+        expect(
+          document.querySelector(
+            'input[name="vascular"][value="Arterial Catheter"]',
+          ).checked,
+        ).toBe(false);
+        expect(
+          document.querySelector('input[name="monitoring"][value="TEE"]')
+            .checked,
+        ).toBe(false);
+        expect(
+          document.querySelector('input[name="difficultAirway"][value=""]')
+            .checked,
+        ).toBe(true);
+        expect(
+          document.querySelector(
+            'input[name="lifeThreateningPathology"][value=""]',
+          ).checked,
+        ).toBe(true);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("shows error status when clearing session fails", async () => {
+      const dialog = document.getElementById("confirmDialog");
+      dialog.showModal = vi.fn();
+      dialog.close = vi.fn();
+      const clearError = new Error("clear failed");
+      Storage.clearState.mockRejectedValue(clearError);
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      const clearPromise = Session.clear();
+      document.getElementById("confirmDialogOk").click();
+      await clearPromise;
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        "Error clearing session:",
+        clearError,
+      );
+      expect(document.getElementById("statusMessage").textContent).toContain(
+        "Error clearing session",
+      );
+    });
+
+    it("shows delayed success status after clearing", async () => {
+      vi.useFakeTimers();
+      try {
+        const dialog = document.getElementById("confirmDialog");
+        dialog.showModal = vi.fn();
+        dialog.close = vi.fn();
+        Storage.clearState.mockResolvedValue(undefined);
+
+        const clearPromise = Session.clear();
+        document.getElementById("confirmDialogOk").click();
+        await clearPromise;
+        await vi.advanceTimersByTimeAsync(100);
+
+        expect(document.getElementById("statusMessage").textContent).toContain(
+          "Session cleared - ready for new file",
+        );
+      } finally {
+        vi.useRealTimers();
+      }
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -304,6 +407,97 @@ describe("App components", () => {
       Storage.loadSettings.mockResolvedValue(undefined);
       Storage.loadState.mockResolvedValue(false);
       await expect(App.init()).resolves.toBeUndefined();
+    });
+
+    it("logs successful initialization in development mode", async () => {
+      const previousEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = "development";
+      const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+      try {
+        Storage.loadSettings.mockResolvedValue(undefined);
+        Storage.loadState.mockResolvedValue(false);
+        await App.init();
+        expect(logSpy).toHaveBeenCalledWith(
+          "ACGME Case Submitter initialized successfully",
+        );
+      } finally {
+        if (previousEnv === undefined) {
+          delete process.env.NODE_ENV;
+        } else {
+          process.env.NODE_ENV = previousEnv;
+        }
+        logSpy.mockRestore();
+      }
+    });
+
+    it("logs initialization error when setup fails", async () => {
+      const initError = new Error("settings load failed");
+      Storage.loadSettings.mockRejectedValue(initError);
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      await expect(App.init()).resolves.toBeUndefined();
+      expect(errorSpy).toHaveBeenCalledWith(
+        "Error initializing app:",
+        initError,
+      );
+    });
+  });
+
+  describe("initializeAppOnLoad()", () => {
+    beforeEach(() => {
+      resetAppInitializationForTests();
+    });
+
+    it("registers DOMContentLoaded handler when document is loading", () => {
+      const addEventListener = vi.fn();
+      const loadingDoc = { readyState: "loading", addEventListener };
+
+      initializeAppOnLoad("development", loadingDoc);
+
+      expect(addEventListener).toHaveBeenCalledWith(
+        "DOMContentLoaded",
+        expect.any(Function),
+        { once: true },
+      );
+    });
+
+    it("calls App.init immediately when document is already loaded", () => {
+      const initSpy = vi.spyOn(App, "init").mockResolvedValue(undefined);
+      const readyDoc = { readyState: "complete", addEventListener: vi.fn() };
+
+      initializeAppOnLoad("development", readyDoc);
+
+      expect(initSpy).toHaveBeenCalled();
+    });
+
+    it("does nothing in test mode", () => {
+      const initSpy = vi.spyOn(App, "init").mockResolvedValue(undefined);
+      const readyDoc = { readyState: "complete", addEventListener: vi.fn() };
+
+      initializeAppOnLoad("test", readyDoc);
+
+      expect(initSpy).not.toHaveBeenCalled();
+    });
+
+    it("initializes only once when called repeatedly during loading", () => {
+      const initSpy = vi.spyOn(App, "init").mockResolvedValue(undefined);
+      const listeners = new Map();
+      const loadingDoc = {
+        readyState: "loading",
+        addEventListener: vi.fn((eventName, handler) => {
+          listeners.set(eventName, handler);
+        }),
+      };
+
+      initializeAppOnLoad("development", loadingDoc);
+      initializeAppOnLoad("development", loadingDoc);
+
+      const onDomContentLoaded = listeners.get("DOMContentLoaded");
+      onDomContentLoaded();
+      onDomContentLoaded();
+
+      expect(initSpy).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -462,6 +656,125 @@ describe("App components", () => {
       await BeastMode.start();
       expect(processSpy).toHaveBeenCalled();
     });
+
+    it("start() handles processAllPending errors", async () => {
+      const startError = new Error("beast failed");
+      const processSpy = vi
+        .spyOn(BeastMode, "processAllPending")
+        .mockRejectedValue(startError);
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      await BeastMode.start();
+
+      expect(processSpy).toHaveBeenCalled();
+      expect(errorSpy).toHaveBeenCalledWith("BEAST mode error:", startError);
+      expect(document.getElementById("statusMessage").textContent).toContain(
+        "BEAST mode error: beast failed",
+      );
+    });
+
+    it("processAllPending() waits for resume when already paused", async () => {
+      vi.useFakeTimers();
+      State.setCases([{ caseId: "C1" }]);
+      Form.validate.mockReturnValue({
+        isValid: true,
+        missing: [],
+        warnings: [],
+        hasWarnings: false,
+      });
+      ACGMEForm.fill.mockResolvedValue({ success: true, submitted: true });
+      Navigation.goToCase.mockImplementation(() => {});
+
+      BeastMode.isActive = true;
+      BeastMode.isPaused = true;
+      BeastMode.shouldStop = false;
+
+      const promise = BeastMode.processAllPending();
+      await Promise.resolve();
+      BeastMode.resume();
+      await vi.runAllTimersAsync();
+      await promise;
+
+      expect(ACGMEForm.fill).toHaveBeenCalledWith(true);
+      vi.useRealTimers();
+    });
+
+    it("processAllPending() retries when revalidation still fails", async () => {
+      vi.useFakeTimers();
+      State.setCases([{ caseId: "C1" }]);
+      Form.validate
+        .mockReturnValueOnce({
+          isValid: false,
+          missing: ["Attending"],
+          warnings: [],
+          hasWarnings: false,
+        })
+        .mockReturnValueOnce({
+          isValid: false,
+          missing: ["Attending"],
+          warnings: [],
+          hasWarnings: false,
+        })
+        .mockReturnValue({
+          isValid: true,
+          missing: [],
+          warnings: [],
+          hasWarnings: false,
+        });
+      ACGMEForm.fill.mockResolvedValue({ success: true, submitted: true });
+      Navigation.goToCase.mockImplementation(() => {});
+      BeastMode.isActive = true;
+      BeastMode.shouldStop = false;
+      const promise = BeastMode.processAllPending();
+
+      await vi.advanceTimersByTimeAsync(2000);
+      if (BeastMode.isPaused) {
+        BeastMode.resume();
+      }
+
+      await vi.runAllTimersAsync();
+      await promise;
+
+      expect(Form.validate).toHaveBeenCalledTimes(3);
+      expect(ACGMEForm.fill).toHaveBeenCalledTimes(1);
+      vi.useRealTimers();
+    });
+
+    it("processAllPending() retries after thrown fill error", async () => {
+      vi.useFakeTimers();
+      State.setCases([{ caseId: "C1" }]);
+      Form.validate.mockReturnValue({
+        isValid: true,
+        missing: [],
+        warnings: [],
+        hasWarnings: false,
+      });
+      const fillError = new Error("network");
+      ACGMEForm.fill
+        .mockRejectedValueOnce(fillError)
+        .mockResolvedValueOnce({ success: true, submitted: true });
+      Navigation.goToCase.mockImplementation(() => {});
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      BeastMode.isActive = true;
+      BeastMode.shouldStop = false;
+      const promise = BeastMode.processAllPending();
+
+      await vi.advanceTimersByTimeAsync(2000);
+      if (BeastMode.isPaused) {
+        BeastMode.resume();
+      }
+
+      await vi.runAllTimersAsync();
+      await promise;
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        "Error processing case 1:",
+        fillError,
+      );
+      expect(ACGMEForm.fill).toHaveBeenCalledTimes(2);
+      vi.useRealTimers();
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -593,6 +906,26 @@ describe("App components", () => {
       document.getElementById("fillSubmitBtn").click();
       await new Promise((resolve) => setTimeout(resolve, 0));
       expect(ACGMEForm.fill).toHaveBeenCalledWith(true);
+    });
+
+    it("fillSubmitBtn schedules goToNextPending after successful submit", async () => {
+      vi.useFakeTimers();
+      try {
+        Form.validate.mockReturnValue({
+          isValid: true,
+          missing: [],
+          warnings: [],
+          hasWarnings: false,
+        });
+        ACGMEForm.fill.mockResolvedValue({ success: true, submitted: true });
+
+        document.getElementById("fillSubmitBtn").click();
+        await vi.runAllTimersAsync();
+
+        expect(Navigation.goToNextPending).toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it("fillSubmitBtn with invalid form shows warning but still fills", async () => {
@@ -755,6 +1088,47 @@ describe("App components", () => {
       });
       // Should not throw even though handler throws
       expect(() => document.getElementById("nextBtn").click()).not.toThrow();
+    });
+
+    it("logs missing elements in development mode", () => {
+      const previousEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = "development";
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+      try {
+        document.getElementById("uploadBtn").remove();
+        EventHandlers.register();
+        expect(errorSpy).toHaveBeenCalledWith("Element not found: uploadBtn");
+      } finally {
+        if (previousEnv === undefined) {
+          delete process.env.NODE_ENV;
+        } else {
+          process.env.NODE_ENV = previousEnv;
+        }
+        errorSpy.mockRestore();
+      }
+    });
+
+    it("logs registration and button clicks in development mode", () => {
+      const previousEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = "development";
+      const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+      try {
+        EventHandlers.register();
+        document.getElementById("nextBtn").click();
+        expect(logSpy).toHaveBeenCalledWith(
+          "Event handlers registered successfully",
+        );
+        expect(logSpy).toHaveBeenCalledWith("Button clicked: nextBtn");
+      } finally {
+        if (previousEnv === undefined) {
+          delete process.env.NODE_ENV;
+        } else {
+          process.env.NODE_ENV = previousEnv;
+        }
+        logSpy.mockRestore();
+      }
     });
   });
 });

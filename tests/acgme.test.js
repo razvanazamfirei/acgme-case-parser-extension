@@ -50,6 +50,28 @@ describe("ACGMEForm", () => {
   // -------------------------------------------------------------------------
 
   describe("fill() — tab errors", () => {
+    it("logs fill invocation in development mode", async () => {
+      const previousEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = "development";
+      const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+      try {
+        chrome.tabs.query.mockResolvedValue([]);
+        await ACGMEForm.fill(false);
+        expect(logSpy).toHaveBeenCalledWith(
+          "ACGMEForm.fill called, andSubmit:",
+          false,
+        );
+      } finally {
+        if (previousEnv === undefined) {
+          delete process.env.NODE_ENV;
+        } else {
+          process.env.NODE_ENV = previousEnv;
+        }
+        logSpy.mockRestore();
+      }
+    });
+
     it("returns error when no active tab found", async () => {
       chrome.tabs.query.mockResolvedValue([]);
       const result = await ACGMEForm.fill();

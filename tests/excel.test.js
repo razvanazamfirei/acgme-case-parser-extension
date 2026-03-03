@@ -644,6 +644,14 @@ describe("Excel.parseFile", () => {
     await expect(Excel.parseFile({})).rejects.toThrow("no data rows");
   });
 
+  it("rejects when XLSX.read throws", async () => {
+    mockFileReader(new Uint8Array([1, 2, 3]));
+    XLSX.read.mockImplementation(() => {
+      throw new Error("bad workbook");
+    });
+    await expect(Excel.parseFile({})).rejects.toThrow("bad workbook");
+  });
+
   it("resolves with caselog cases on success", async () => {
     mockFileReader(new Uint8Array([1, 2, 3]));
     XLSX.read.mockReturnValue({

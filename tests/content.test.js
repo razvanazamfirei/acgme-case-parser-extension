@@ -1,3 +1,4 @@
+import fuzzysort from "fuzzysort";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import "../src/content/content.js";
 
@@ -374,6 +375,14 @@ describe("findAttendingId", () => {
     expect(findAttendingId("LEE, DAVID C")).toBe("104");
   });
 
+  it("matches when middle name is exactly equal in the name-match branch", () => {
+    document.body.innerHTML = `
+      <select id="Attendings">
+        <option value="201">JONES, MARY A MD</option>
+      </select>`;
+    expect(findAttendingId("JONES, MARY A")).toBe("201");
+  });
+
   it("returns null when name is ambiguous (multiple close matches)", () => {
     // Add a second JONES to make it ambiguous
     document.body.innerHTML = `
@@ -384,6 +393,15 @@ describe("findAttendingId", () => {
     // Both have exact last+first "JONES, MARY" but differ in middle initial.
     // This should remain ambiguous and resolve to null.
     expect(findAttendingId("JONES, MARY")).toBeNull();
+  });
+
+  it("returns null when exact normalized name appears multiple times", () => {
+    document.body.innerHTML = `
+      <select id="Attendings">
+        <option value="301">SMITH, JOHN</option>
+        <option value="302">SMITH, JOHN</option>
+      </select>`;
+    expect(findAttendingId("SMITH, JOHN")).toBeNull();
   });
 
   it("returns all matches when returnAllMatches=true", () => {
@@ -442,6 +460,21 @@ describe("findAttendingId", () => {
         <option value="200">HERNANDEZ, CARLOS</option>
       </select>`;
     expect(findAttendingId("HERNANEZ, CARLOS")).toBe("200");
+  });
+
+  it("returns null when fuzzy top score is below confidence threshold", () => {
+    const goSpy = vi.spyOn(fuzzysort, "go").mockReturnValue([
+      {
+        obj: { value: "100", text: "SMITH, JOHN" },
+        score: -900,
+      },
+    ]);
+
+    try {
+      expect(findAttendingId("UNKNOWN DOCTOR")).toBeNull();
+    } finally {
+      goSpy.mockRestore();
+    }
   });
 });
 
@@ -590,6 +623,37 @@ describe("fillCase", () => {
     expect(result.warnings.some((w) => w.includes("default attending"))).toBe(
       true,
     );
+  });
+
+  it("uses unique non-exact fallback match when strict lookup returns null", () => {
+    const originalGetElementById = document.getElementById.bind(document);
+    let attendingLookupCount = 0;
+    const getByIdSpy = vi
+      .spyOn(document, "getElementById")
+      .mockImplementation((id) => {
+        if (id === "Attendings") {
+          attendingLookupCount += 1;
+          if (attendingLookupCount === 1) {
+            return null;
+          }
+        }
+        return originalGetElementById(id);
+      });
+
+    try {
+      const result = fillCase({
+        ...baseCase,
+        attending: "SMITH, J",
+        showWarnings: true,
+      });
+
+      expect(result.filled).toContain("attending");
+      expect(result.warnings.some((w) => w.includes("not found exactly"))).toBe(
+        true,
+      );
+    } finally {
+      getByIdSpy.mockRestore();
+    }
   });
 
   it("sets age category select", () => {

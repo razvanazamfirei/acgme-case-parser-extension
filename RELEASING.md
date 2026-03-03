@@ -36,7 +36,6 @@ The popup footer version is read dynamically from `manifest.json` at runtime.
 bun run release:prepare
 ```
 
-
 4. Commit and push the version bump.
 
 ```bash

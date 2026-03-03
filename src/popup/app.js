@@ -653,6 +653,30 @@ const App = {
   },
 };
 
+let appInitialized = false;
+
+function initializeAppOnce() {
+  if (appInitialized) {
+    return;
+  }
+  appInitialized = true;
+  void App.init();
+}
+
+function initializeAppOnLoad(mode = import.meta.env.MODE, doc = document) {
+  if (mode === "test") {
+    return;
+  }
+
+  if (doc.readyState === "loading") {
+    doc.addEventListener("DOMContentLoaded", initializeAppOnce, {
+      once: true,
+    });
+  } else {
+    initializeAppOnce();
+  }
+}
+
 if (import.meta.env.MODE === "test") {
   globalThis.__APP_TEST_API__ = {
     FileUpload,
@@ -661,14 +685,11 @@ if (import.meta.env.MODE === "test") {
     Metadata,
     EventHandlers,
     App,
+    initializeAppOnLoad,
+    resetAppInitializationForTests: () => {
+      appInitialized = false;
+    },
   };
 }
 
-// Handle both DOMContentLoaded and already-loaded cases
-if (import.meta.env.MODE !== "test") {
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => App.init());
-  } else {
-    App.init();
-  }
-}
+initializeAppOnLoad();
