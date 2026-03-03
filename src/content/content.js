@@ -263,6 +263,7 @@ function findAttendingId(name, returnAllMatches = false) {
 
   const nameNormalized = normalize(name);
   const matches = [];
+  let exactMatchCount = 0;
 
   // Extract name parts (expecting "Last, First Middle" but tolerant of spacing)
   const nameParts = nameNormalized.split(/\s+/).filter(Boolean);
@@ -292,6 +293,10 @@ function findAttendingId(name, returnAllMatches = false) {
     // Exact match (normalized)
     if (optNormalized === nameNormalized) {
       matches.push({ value: opt.value, text: opt.text, matchType: "exact" });
+      exactMatchCount += 1;
+      if (!returnAllMatches && exactMatchCount > 1) {
+        return null;
+      }
       continue;
     }
 

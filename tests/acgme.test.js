@@ -63,7 +63,12 @@ describe("ACGMEForm", () => {
           false,
         );
       } finally {
-        process.env.NODE_ENV = previousEnv;
+        if (previousEnv === undefined) {
+          delete process.env.NODE_ENV;
+        } else {
+          process.env.NODE_ENV = previousEnv;
+        }
+        logSpy.mockRestore();
       }
     });
 

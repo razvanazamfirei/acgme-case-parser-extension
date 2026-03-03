@@ -303,49 +303,56 @@ describe("App components", () => {
     });
 
     it("resets checkbox and radio groups when clearing", async () => {
-      const dialog = document.getElementById("confirmDialog");
-      dialog.showModal = vi.fn();
-      dialog.close = vi.fn();
-      Storage.clearState.mockResolvedValue(undefined);
+      vi.useFakeTimers();
+      try {
+        const dialog = document.getElementById("confirmDialog");
+        dialog.showModal = vi.fn();
+        dialog.close = vi.fn();
+        Storage.clearState.mockResolvedValue(undefined);
 
-      document.body.insertAdjacentHTML(
-        "beforeend",
-        `
-          <input type="checkbox" name="airway" value="Oral ETT" checked />
-          <input type="checkbox" name="vascular" value="Arterial Catheter" checked />
-          <input type="checkbox" name="monitoring" value="TEE" checked />
-          <input type="radio" name="difficultAirway" value="" />
-          <input type="radio" name="difficultAirway" value="Unanticipated" checked />
-          <input type="radio" name="lifeThreateningPathology" value="" />
-          <input type="radio" name="lifeThreateningPathology" value="Trauma" checked />
-        `,
-      );
+        document.body.insertAdjacentHTML(
+          "beforeend",
+          `
+            <input type="checkbox" name="airway" value="Oral ETT" checked />
+            <input type="checkbox" name="vascular" value="Arterial Catheter" checked />
+            <input type="checkbox" name="monitoring" value="TEE" checked />
+            <input type="radio" name="difficultAirway" value="" />
+            <input type="radio" name="difficultAirway" value="Unanticipated" checked />
+            <input type="radio" name="lifeThreateningPathology" value="" />
+            <input type="radio" name="lifeThreateningPathology" value="Trauma" checked />
+          `,
+        );
 
-      const clearPromise = Session.clear();
-      document.getElementById("confirmDialogOk").click();
-      await clearPromise;
+        const clearPromise = Session.clear();
+        document.getElementById("confirmDialogOk").click();
+        await clearPromise;
+        await vi.runAllTimersAsync();
 
-      expect(
-        document.querySelector('input[name="airway"][value="Oral ETT"]')
-          .checked,
-      ).toBe(false);
-      expect(
-        document.querySelector(
-          'input[name="vascular"][value="Arterial Catheter"]',
-        ).checked,
-      ).toBe(false);
-      expect(
-        document.querySelector('input[name="monitoring"][value="TEE"]').checked,
-      ).toBe(false);
-      expect(
-        document.querySelector('input[name="difficultAirway"][value=""]')
-          .checked,
-      ).toBe(true);
-      expect(
-        document.querySelector(
-          'input[name="lifeThreateningPathology"][value=""]',
-        ).checked,
-      ).toBe(true);
+        expect(
+          document.querySelector('input[name="airway"][value="Oral ETT"]')
+            .checked,
+        ).toBe(false);
+        expect(
+          document.querySelector(
+            'input[name="vascular"][value="Arterial Catheter"]',
+          ).checked,
+        ).toBe(false);
+        expect(
+          document.querySelector('input[name="monitoring"][value="TEE"]')
+            .checked,
+        ).toBe(false);
+        expect(
+          document.querySelector('input[name="difficultAirway"][value=""]')
+            .checked,
+        ).toBe(true);
+        expect(
+          document.querySelector(
+            'input[name="lifeThreateningPathology"][value=""]',
+          ).checked,
+        ).toBe(true);
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it("shows error status when clearing session fails", async () => {

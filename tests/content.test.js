@@ -640,18 +640,20 @@ describe("fillCase", () => {
         return originalGetElementById(id);
       });
 
-    const result = fillCase({
-      ...baseCase,
-      attending: "SMITH, J",
-      showWarnings: true,
-    });
+    try {
+      const result = fillCase({
+        ...baseCase,
+        attending: "SMITH, J",
+        showWarnings: true,
+      });
 
-    expect(result.filled).toContain("attending");
-    expect(result.warnings.some((w) => w.includes("not found exactly"))).toBe(
-      true,
-    );
-
-    getByIdSpy.mockRestore();
+      expect(result.filled).toContain("attending");
+      expect(result.warnings.some((w) => w.includes("not found exactly"))).toBe(
+        true,
+      );
+    } finally {
+      getByIdSpy.mockRestore();
+    }
   });
 
   it("sets age category select", () => {
