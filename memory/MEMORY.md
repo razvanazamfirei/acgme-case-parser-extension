@@ -12,6 +12,7 @@ Source: `mock-website/` (minified JS in `core-caselogs`, `core-internal`)
 ### Submit flow (jQuery-based, traditional POST)
 
 Two submit handlers are registered on the form:
+
 1. **caseEntry040 handler** — for anesthesia-style cases with `cbprocedureid` checkboxes:
    - Always calls `n.preventDefault()`
    - Runs `$("form").valid()` (jQuery unobtrusive validation)
@@ -47,10 +48,13 @@ Two submit handlers are registered on the form:
 ## Bug Fixes Applied (v1.3.6)
 
 ### 1. Beast mode race condition (`acgme.js`, `app.js`)
+
 `_handleFillResult` was scheduling `setTimeout(() => Navigation.goToNextPending(), 1000)` unconditionally. In beast mode this timer fired during the next case's 1500ms page-load wait, overwrote the form data with a different case's values, and caused the wrong case to be submitted. Fix: moved the setTimeout to the `fillSubmitBtn` handler only.
 
 ### 2. Successful submit detected as failure (`acgme.js`)
+
 When ACGME navigates on success, the content script is destroyed and the popup gets `lastError: "The message channel closed..."`. This was treated as failure. Fix: detect that specific error message and resolve as success.
 
 ### 3. No validation feedback on blocked submit (`content.js`)
+
 `submitCase()` returned immediately after clicking the button with no verification. Fix: wait 500ms for synchronous jQuery validation to run, then scan for `.field-validation-error`, `.validation-summary-errors`, `.alert-danger` elements. If page navigated (success), content script is destroyed before `sendResponse` fires — handled by fix #2.

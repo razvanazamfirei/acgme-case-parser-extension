@@ -653,6 +653,17 @@ const App = {
   },
 };
 
+if (import.meta.env.MODE === "test") {
+  globalThis.__APP_TEST_API__ = {
+    FileUpload,
+    BeastMode,
+    Session,
+    Metadata,
+    EventHandlers,
+    App,
+  };
+}
+
 // Handle both DOMContentLoaded and already-loaded cases
 if (import.meta.env.MODE !== "test") {
   if (document.readyState === "loading") {

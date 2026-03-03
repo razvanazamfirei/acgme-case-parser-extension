@@ -22,6 +22,7 @@ bun run dev
 bun run build
 bun run build:dev
 bun run clean
+bun run verify:dist
 ```
 
 ## Local Packaging
@@ -29,6 +30,9 @@ bun run clean
 ```bash
 bun run package:zip
 ```
+
+`package:zip` runs a clean production build, verifies `dist/` has no test
+fixtures/markers, then creates the zip from runtime files only.
 
 Output zip:
 

@@ -4,10 +4,10 @@
 
 `manifest.json` defines a least-privilege policy.
 
-| Permission | Purpose |
-|---|---|
-| `storage` | Persist settings and current session progress locally/synced |
-| Host: `https://apps.acgme.org/ads/CaseLogs/CaseEntry/*` | Restrict content script injection to ADS Case Entry only |
+| Permission                                              | Purpose                                                      |
+| ------------------------------------------------------- | ------------------------------------------------------------ |
+| `storage`                                               | Persist settings and current session progress locally/synced |
+| Host: `https://apps.acgme.org/ads/CaseLogs/CaseEntry/*` | Restrict content script injection to ADS Case Entry only     |
 
 No `activeTab`, no `scripting`, no broad host patterns.
 

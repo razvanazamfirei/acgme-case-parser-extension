@@ -23,10 +23,10 @@ An optional `_meta` sheet (any position in the workbook) controls parsing
 behaviour. Its first row is treated as a header and is ignored. Subsequent rows
 contain key-value pairs in columns A and B:
 
-| Key | Values | Default |
-|---|---|---|
+| Key           | Values                  | Default   |
+| ------------- | ----------------------- | --------- |
 | `format_type` | `caselog`, `standalone` | `caselog` |
-| `version` | string | `1` |
+| `version`     | string                  | `1`       |
 
 The `format_type` value is trimmed and case-normalized before use. If no `_meta`
 sheet is present, `caselog` format is assumed (backwards compatible with files
@@ -91,15 +91,15 @@ Behavior:
 
 `Procedure Name` canonical values and their mappings:
 
-| `Procedure Name` | `anesthesia` | `airway` | `vascularAccess` |
-|---|---|---|---|
-| `Intubation routine` | `GA` | `Oral ETT` | |
-| `LMA` | `GA` | `LMA` | |
-| `Arterial line` | | | `Arterial Catheter` |
-| `Epidural` | `Epidural` | | |
-| `CSE` | `CSE` | | |
-| `Spinal` | `Spinal` | | |
-| `Peripheral nerve block` | `PNB Single` | | |
+| `Procedure Name`         | `anesthesia` | `airway`   | `vascularAccess`    |
+| ------------------------ | ------------ | ---------- | ------------------- |
+| `Intubation routine`     | `GA`         | `Oral ETT` |                     |
+| `LMA`                    | `GA`         | `LMA`      |                     |
+| `Arterial line`          |              |            | `Arterial Catheter` |
+| `Epidural`               | `Epidural`   |            |                     |
+| `CSE`                    | `CSE`        |            |                     |
+| `Spinal`                 | `Spinal`     |            |                     |
+| `Peripheral nerve block` | `PNB Single` |            |                     |
 
 ## Accepted Value Sets
 

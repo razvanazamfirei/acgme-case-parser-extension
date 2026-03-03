@@ -26,6 +26,7 @@ Recommended checks:
 
 ```bash
 bun run check
+bun run test:coverage
 bun run build
 ```
 
@@ -42,6 +43,7 @@ bun run build
 
 - [ ] Changes are scoped and explained
 - [ ] `bun run check` passes
+- [ ] `bun run test:coverage` passes
 - [ ] `bun run build` passes
 - [ ] Any UX/API changes are reflected in docs
 - [ ] Compliance-related behavior/docs are updated when relevant

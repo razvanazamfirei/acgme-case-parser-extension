@@ -24,7 +24,10 @@ const STANDALONE_PROCEDURE_MAP = {
 
 // Normalized (lowercase) lookup built once to handle source casing differences
 const STANDALONE_PROCEDURE_MAP_LOWER = Object.fromEntries(
-  Object.entries(STANDALONE_PROCEDURE_MAP).map(([k, v]) => [k.toLowerCase(), v]),
+  Object.entries(STANDALONE_PROCEDURE_MAP).map(([k, v]) => [
+    k.toLowerCase(),
+    v,
+  ]),
 );
 
 export const Excel = {
@@ -183,8 +186,11 @@ export const Excel = {
       const procedureName = this.getString(row, colIndex["Procedure Name"]);
       const primaryBlock = this.getString(row, colIndex["Primary Block"]);
       const procedureNameLower = procedureName.toLowerCase();
-      const procedureFields = STANDALONE_PROCEDURE_MAP_LOWER[procedureNameLower] || {};
-      const knownProcedure = procedureName && Object.hasOwn(STANDALONE_PROCEDURE_MAP_LOWER, procedureNameLower);
+      const procedureFields =
+        STANDALONE_PROCEDURE_MAP_LOWER[procedureNameLower] || {};
+      const knownProcedure =
+        procedureName &&
+        Object.hasOwn(STANDALONE_PROCEDURE_MAP_LOWER, procedureNameLower);
       if (procedureName && !knownProcedure) {
         unknownProcedures.add(procedureName);
       }

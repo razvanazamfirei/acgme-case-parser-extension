@@ -160,5 +160,5 @@ Example with Pandoc:
 pandoc USER_GUIDE.md -o USER_GUIDE.pdf
 ```
 
-If you want embedded images in the PDF, run the command from the repository root 
+If you want embedded images in the PDF, run the command from the repository root
 so relative image paths resolve correctly.

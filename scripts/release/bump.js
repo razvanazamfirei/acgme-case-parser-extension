@@ -7,7 +7,7 @@ const releaseType = process.argv[2];
 const validTypes = new Set(["patch", "minor", "major"]);
 
 if (!validTypes.has(releaseType)) {
-  console.error("Usage: bun run scripts/release/bump.mjs <patch|minor|major>");
+  console.error("Usage: bun run scripts/release/bump.js <patch|minor|major>");
   process.exit(1);
 }
 

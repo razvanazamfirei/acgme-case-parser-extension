@@ -812,6 +812,22 @@ async function submitCase() {
   return { success: true };
 }
 
+if (import.meta.env.MODE === "test") {
+  globalThis.__CONTENT_TEST_API__ = {
+    getFieldId,
+    setSelectValue,
+    setInputValue,
+    checkProcedure,
+    checkRadioProcedure,
+    uncheckAllProcedures,
+    findAttendingId,
+    getAttendingOptions,
+    fillCase,
+    submitCase,
+    getVisibleErrors,
+  };
+}
+
 // Listen for messages from the popup
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.action === "fillCase") {

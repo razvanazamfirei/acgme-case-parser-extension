@@ -18,6 +18,7 @@
       "**",
       "!!**/dist",
       "!!**/node_modules",
+      "!!**/coverage",
       "!!**/*.min.js",
       "!!**/public/xlsx.min.js",
       "!!**/mock-website"

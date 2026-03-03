@@ -1,5 +1,8 @@
 # ACGME Case Submitter Chrome Extension
 
+[![CI](https://github.com/razvanazamfirei/acgme-case-parser-extension/actions/workflows/ci.yml/badge.svg)](https://github.com/razvanazamfirei/acgme-case-parser-extension/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/razvanazamfirei/acgme-case-parser-extension/graph/badge.svg)](https://codecov.io/gh/razvanazamfirei/acgme-case-parser-extension)
+
 Standalone Chrome extension repository for uploading standardized case-parser
 output and autofilling the ACGME Case Entry page:
 
@@ -64,9 +67,25 @@ bun run lint
 bun run lint:fix
 bun run format
 bun run check
+bun run verify:dist
 ```
 
 If you prefer Bun, `bun run <script>` works with the same script names.
+
+## CI and Coverage (Codecov)
+
+Coverage is uploaded from GitHub Actions via `.github/workflows/ci.yml` using
+`bun run test:coverage` + `coverage/lcov.info`.
+
+Setup checklist:
+
+1. Install the Codecov GitHub App for this repository.
+2. Add repository secret `CODECOV_TOKEN` (required for private repos; optional
+   for public repos if app-based tokenless upload is enabled).
+3. In branch protection, require status checks:
+   - `check-and-test`
+   - `codecov/project`
+   - `codecov/patch`
 
 ## Packaging For Chrome Web Store
 
@@ -74,7 +93,8 @@ If you prefer Bun, `bun run <script>` works with the same script names.
 bun run package:zip
 ```
 
-This creates `acgme-case-submitter-v<version>.zip` at repo root.
+This creates `acgme-case-submitter-v<version>.zip` at repo root after a clean
+production build and `dist` verification (no test fixtures/markers).
 
 ## Permissions
 

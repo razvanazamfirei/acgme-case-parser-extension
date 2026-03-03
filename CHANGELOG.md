@@ -8,7 +8,7 @@
   instead of hardcoded HTML text
 - File upload controls were restyled so the filename display and choose button
   use a cohesive, consistent visual style
-- Release docs and `scripts/release/bump.mjs` were updated to remove
+- Release docs and `scripts/release/bump.js` were updated to remove
   now-unneeded `src/popup/index.html` version replacement
 
 ## 1.3.3 - 2026-02-22
@@ -28,7 +28,7 @@
 - `SHAREABLE_GUIDE.md` with a simple step-by-step guide and screenshots for
   sharing with end users
 - `RELEASING.md` with a Bun-first release process
-- `scripts/release/bump.mjs` for `major`/`minor`/`patch` version bumps
+- `scripts/release/bump.js` for `major`/`minor`/`patch` version bumps
 - `.github/workflows/release.yml` for tag-triggered GitHub Releases
 - Comprehensive wiki source pages in `wiki/`
 - `scripts/wiki/publish.sh` to sync repository wiki pages to GitHub Wiki

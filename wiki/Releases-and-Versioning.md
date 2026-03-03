@@ -57,7 +57,7 @@ On tag push (`v*.*.*`), GitHub Actions:
 
 ## Bump Utility
 
-Script: `scripts/release/bump.mjs`
+Script: `scripts/release/bump.js`
 
 It updates:
 
