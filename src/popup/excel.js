@@ -22,6 +22,11 @@ const STANDALONE_PROCEDURE_MAP = {
   "Peripheral nerve block": { anesthesia: "PNB Single" },
 };
 
+// Normalized (lowercase) lookup built once to handle source casing differences
+const STANDALONE_PROCEDURE_MAP_LOWER = Object.fromEntries(
+  Object.entries(STANDALONE_PROCEDURE_MAP).map(([k, v]) => [k.toLowerCase(), v]),
+);
+
 export const Excel = {
   async parseFile(file) {
     return new Promise((resolve, reject) => {
@@ -32,7 +37,12 @@ export const Excel = {
           const data = new Uint8Array(e.target.result);
           const workbook = XLSX.read(data, { type: "array" });
           const meta = this.readMeta(workbook);
-          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const dataSheetName = workbook.SheetNames.find((n) => n !== "_meta");
+          if (!dataSheetName) {
+            reject(new Error("No data sheet found"));
+            return;
+          }
+          const firstSheet = workbook.Sheets[dataSheetName];
           const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
 
           if (rows.length < 2) {
@@ -69,7 +79,7 @@ export const Excel = {
 
     return {
       version: meta.version || "1",
-      formatType: meta.format_type || "caselog",
+      formatType: (meta.format_type || "caselog").trim().toLowerCase(),
     };
   },
 
@@ -172,11 +182,12 @@ export const Excel = {
 
       const procedureName = this.getString(row, colIndex["Procedure Name"]);
       const primaryBlock = this.getString(row, colIndex["Primary Block"]);
-      const knownProcedure = Object.hasOwn(STANDALONE_PROCEDURE_MAP, procedureName);
+      const procedureNameLower = procedureName.toLowerCase();
+      const procedureFields = STANDALONE_PROCEDURE_MAP_LOWER[procedureNameLower] || {};
+      const knownProcedure = procedureName && Object.hasOwn(STANDALONE_PROCEDURE_MAP_LOWER, procedureNameLower);
       if (procedureName && !knownProcedure) {
         unknownProcedures.add(procedureName);
       }
-      const procedureFields = STANDALONE_PROCEDURE_MAP[procedureName] || {};
 
       let comments = this.getString(row, colIndex["Original Procedure"]);
       if (primaryBlock) {
@@ -280,7 +291,7 @@ export const Excel = {
 
     const d = new Date(val);
     if (!Number.isNaN(d.getTime())) {
-      return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
+      return `${d.getUTCMonth() + 1}/${d.getUTCDate()}/${d.getUTCFullYear()}`;
     }
 
     return String(val);
