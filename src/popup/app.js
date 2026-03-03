@@ -53,7 +53,13 @@ const FileUpload = {
       // Show mapping status
       UI.showMappingStatus(mappingResult);
 
-      UI.showStatus(`Loaded ${cases.length} cases`, "success");
+      const parseWarnings = mappingResult.warnings || [];
+      const warningMsg =
+        parseWarnings.length > 0 ? ` Warning: ${parseWarnings.join("; ")}` : "";
+      UI.showStatus(
+        `Loaded ${cases.length} cases${warningMsg}`,
+        parseWarnings.length > 0 ? "info" : "success",
+      );
     } catch (error) {
       UI.showStatus(`Error parsing file: ${error.message}`, "error");
       console.error(error);
@@ -648,9 +654,10 @@ const App = {
 };
 
 // Handle both DOMContentLoaded and already-loaded cases
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => App.init());
-} else {
-  // DOM already loaded
-  App.init();
+if (import.meta.env.MODE !== "test") {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => App.init());
+  } else {
+    App.init();
+  }
 }
