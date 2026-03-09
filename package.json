@@ -1,6 +1,6 @@
 {
   "name": "acgme-case-submitter",
-  "version": "1.3.6",
+  "version": "1.4.0",
   "description": "Chrome extension to auto-fill ACGME case entry forms",
   "license": "Apache-2.0",
   "author": "Razvan Azamfirei",
@@ -32,6 +32,7 @@
     "check": "biome check .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage --reporter=junit --outputFile=test-report.junit.xml",
+    "validate:output": "node scripts/validation/validate-output.js",
     "package:zip": "VERSION=$(bun -e \"const p = await Bun.file('package.json').json(); console.log(p.version);\") && bun run clean && bun run build && cd dist && rm -f ../acgme-case-submitter-v$VERSION.zip && zip -r ../acgme-case-submitter-v$VERSION.zip . -x '*.DS_Store' -x '.vite/*' -x '.vite/**'",
     "bump:patch": "bun run scripts/release/bump.js patch",
     "bump:minor": "bun run scripts/release/bump.js minor",

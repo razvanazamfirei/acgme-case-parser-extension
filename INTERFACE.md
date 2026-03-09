@@ -13,24 +13,33 @@ This document defines the application interface between:
 
 ## Input Spreadsheet Contract
 
-The extension reads the first non-`_meta` sheet and maps columns by header name
-(case-insensitive, whitespace-trimmed). If no non-`_meta` sheet exists, the
-file load fails with an error.
+The extension reads workbook metadata from `_meta` when present, otherwise from
+`Info` when present. Supported metadata sheet names are matched after trimming
+and case-normalizing the sheet name. It then reads the `CaseLog` sheet when
+available, falling back to the first non-metadata sheet, and maps columns by
+header name (case-insensitive, whitespace-trimmed). If no non-metadata sheet
+exists, the file load fails with an error.
 
 ### Format Detection
 
-An optional `_meta` sheet (any position in the workbook) controls parsing
-behaviour. Its first row is treated as a header and is ignored. Subsequent rows
-contain key-value pairs in columns A and B:
+An optional metadata sheet (preferably `_meta`, with `Info` supported as a
+fallback) controls parsing behaviour. Its first row is treated as a header and
+is ignored. Subsequent rows contain key-value pairs in columns A and B:
 
 | Key           | Values                  | Default   |
 | ------------- | ----------------------- | --------- |
 | `format_type` | `caselog`, `standalone` | `caselog` |
 | `version`     | string                  | `1`       |
 
-The `format_type` value is trimmed and case-normalized before use. If no `_meta`
-sheet is present, `caselog` format is assumed (backwards compatible with files
-that predate this feature).
+Metadata keys are trimmed and case-normalized before lookup, and non-alphanumeric
+separators are normalized to underscores. This means the parser treats
+`format_type`, `format type`, `Format Type`, and `formatType` as the same key
+(`format_type`), and likewise accepts `version` and `Version` for `version`.
+
+The `format_type` value is trimmed and case-normalized before use, so values
+like ` Caselog ` and `Standalone` are accepted. If no metadata sheet is present,
+`format_type` defaults to `caselog` and `version` defaults to `1` (backwards
+compatible with files that predate this feature).
 
 ### Caselog Format (`format_type: caselog`)
 
@@ -74,6 +83,7 @@ Required columns:
 
 Optional columns:
 
+- `Age`
 - `Primary Block`
 
 Behavior:
@@ -84,7 +94,8 @@ Behavior:
 - If `Primary Block` is non-empty, it is appended to `Original Procedure` as
   `"<original> | Block: <block>"` (or `"Block: <block>"` when the original
   procedure is blank). The result is stored in `comments`.
-- `Age` is not present in this format; `ageCategory` is always set to `""`.
+- If `Age` is present, it is preserved as `ageCategory`; otherwise
+  `ageCategory` is set to `""`.
 - Missing required columns: file load fails with an error.
 - Missing optional columns: file loads; those values are treated as empty.
 - Additional columns: ignored.
@@ -93,9 +104,11 @@ Behavior:
 
 | `Procedure Name`         | `anesthesia` | `airway`   | `vascularAccess`    |
 | ------------------------ | ------------ | ---------- | ------------------- |
+| `Intubation complex`     | `GA`         | `Oral ETT` |                     |
 | `Intubation routine`     | `GA`         | `Oral ETT` |                     |
 | `LMA`                    | `GA`         | `LMA`      |                     |
 | `Arterial line`          |              |            | `Arterial Catheter` |
+| `Epidural Blood Patch`   | `Epidural`   |            |                     |
 | `Epidural`               | `Epidural`   |            |                     |
 | `CSE`                    | `CSE`        |            |                     |
 | `Spinal`                 | `Spinal`     |            |                     |
@@ -156,10 +169,10 @@ Format-specific notes:
 - **Caselog**: all fields populated from columns; `difficultAirway` is set to
   `"Unanticipated"` when `"Difficult Airway"` appears in `Airway Management`
   (the token is stripped from `airway`).
-- **Standalone**: `ageCategory` is always `""`; `monitoring` is always `""`;
-  `anesthesia`, `airway`, and `vascularAccess` are derived from `Procedure Name`;
-  `comments` combines `Original Procedure` and `Primary Block`; `difficultAirway`
-  is always `""`.
+- **Standalone**: `ageCategory` is populated from `Age` when present and `""`
+  otherwise; `monitoring` is always `""`; `anesthesia`, `airway`, and
+  `vascularAccess` are derived from `Procedure Name`; `comments` combines
+  `Original Procedure` and `Primary Block`; `difficultAirway` is always `""`.
 
 Dates are formatted as `M/D/YYYY`. Excel serial numbers are converted using UTC
 to avoid timezone-dependent off-by-one errors.
@@ -261,8 +274,8 @@ The caselog format contract matches the case-parser standardized output headers
 produced by the companion `case-parser` tool (see its `domain.py` module).
 
 The standalone format is produced by the same tool when exporting individual
-procedures (e.g., nerve blocks) as a separate sheet with a `_meta` sheet
-identifying `format_type: standalone`.
+procedures (e.g., nerve blocks) as a separate sheet with metadata identifying
+`format_type: standalone`.
 
 As long as those headers remain unchanged, the extension input interface remains
 compatible.
