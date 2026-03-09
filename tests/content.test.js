@@ -986,6 +986,25 @@ describe("fillCase", () => {
     expect(checked("156736")).toBe(true);
   });
 
+  it("queries peripheral block options once per fill", () => {
+    const querySelectorAllSpy = vi.spyOn(document, "querySelectorAll");
+
+    fillCase({
+      ...baseCase,
+      anesthesia: "PNB Single",
+      comments: "Procedure | Block: Femoral nerve block, Sciatic nerve block",
+    });
+
+    const peripheralOptionCalls = querySelectorAllSpy.mock.calls.filter(
+      ([selector]) =>
+        selector ===
+        'input.cbprocedureid[data-area="Peripheral Nerve Blockade Site (Optional)"]',
+    );
+
+    expect(peripheralOptionCalls).toHaveLength(1);
+    querySelectorAllSpy.mockRestore();
+  });
+
   it("maps unknown standalone block terms to Other peripheral site", () => {
     const result = fillCase({
       ...baseCase,
@@ -999,6 +1018,21 @@ describe("fillCase", () => {
         w.includes("Other - peripheral nerve blockade site"),
       ),
     ).toBe(true);
+  });
+
+  it("suppresses peripheral block console warnings when showWarnings=false", () => {
+    console.warn.mockClear();
+    document.getElementById("1911477")?.remove();
+
+    const result = fillCase({
+      ...baseCase,
+      anesthesia: "PNB Single",
+      comments: "Procedure | Block: Adductor canal block",
+      showWarnings: false,
+    });
+
+    expect(result.warnings).toEqual([]);
+    expect(console.warn).not.toHaveBeenCalled();
   });
 
   it("ignores standalone Primary Block values for non-peripheral cases", () => {

@@ -725,9 +725,11 @@ describe("Excel.parseFile", () => {
   });
 
   it("rejects when all sheets are metadata sheets", async () => {
+    const infoSheet = { name: "Info" };
+    const metaSheet = { name: "_meta" };
     mockFileReader(new Uint8Array([1, 2, 3]));
     XLSX.read.mockReturnValue({
-      Sheets: { Info: {}, _meta: {} },
+      Sheets: { Info: infoSheet, _meta: metaSheet },
       SheetNames: ["Info", "_meta"],
     });
     XLSX.utils.sheet_to_json.mockReturnValueOnce([
@@ -735,6 +737,10 @@ describe("Excel.parseFile", () => {
       ["Format Type", "caselog"],
     ]);
     await expect(Excel.parseFile({})).rejects.toThrow("No data sheet found");
+    expect(XLSX.utils.sheet_to_json).toHaveBeenCalledTimes(1);
+    expect(XLSX.utils.sheet_to_json).toHaveBeenCalledWith(metaSheet, {
+      header: 1,
+    });
   });
 
   it("reads data from the first non-_meta sheet when _meta is listed first", async () => {
@@ -766,9 +772,11 @@ describe("Excel.parseFile", () => {
   });
 
   it("skips the Info sheet and reads metadata from it when _meta is absent", async () => {
+    const infoSheet = { name: "Info" };
+    const caseLogSheet = { name: "CaseLog" };
     mockFileReader(new Uint8Array([1, 2, 3]));
     XLSX.read.mockReturnValue({
-      Sheets: { Info: {}, CaseLog: {} },
+      Sheets: { Info: infoSheet, CaseLog: caseLogSheet },
       SheetNames: ["Info", "CaseLog"],
     });
     XLSX.utils.sheet_to_json
@@ -795,6 +803,57 @@ describe("Excel.parseFile", () => {
     expect(result.cases[0].caseId).toBe("INFO-SHEET-001");
     expect(result.cases[0].ageCategory).toBe("d. >= 12 yr. and < 65 yr.");
     expect(result.cases[0].anesthesia).toBe("Spinal");
+    expect(XLSX.utils.sheet_to_json).toHaveBeenNthCalledWith(1, infoSheet, {
+      header: 1,
+    });
+    expect(XLSX.utils.sheet_to_json).toHaveBeenNthCalledWith(2, caseLogSheet, {
+      header: 1,
+    });
+  });
+
+  it("prefers the CaseLog sheet over earlier non-metadata sheets", async () => {
+    const otherSheet = { name: "OtherSheet" };
+    const infoSheet = { name: "Info" };
+    const caseLogSheet = { name: "CaseLog" };
+    mockFileReader(new Uint8Array([1, 2, 3]));
+    XLSX.read.mockReturnValue({
+      Sheets: {
+        OtherSheet: otherSheet,
+        Info: infoSheet,
+        CaseLog: caseLogSheet,
+      },
+      SheetNames: ["OtherSheet", "Info", "CaseLog"],
+    });
+    XLSX.utils.sheet_to_json
+      .mockReturnValueOnce([
+        ["Field", "Value"],
+        ["Version", "2"],
+        ["Format Type", "standalone"],
+      ])
+      .mockReturnValueOnce([
+        STANDALONE_HEADERS,
+        makeStandaloneRow({
+          "Case ID": "INFO-SHEET-001",
+          "Case Date": "7/1/2023",
+          Supervisor: "Jones",
+          Age: "d. >= 12 yr. and < 65 yr.",
+          "Original Procedure": "Proc",
+          "ASA Physical Status": "2",
+          "Procedure Category": "Other (procedure cat)",
+          "Procedure Name": "Spinal",
+          "Primary Block": "",
+        }),
+      ]);
+    const result = await Excel.parseFile({});
+    expect(result.cases[0].caseId).toBe("INFO-SHEET-001");
+    expect(result.cases[0].ageCategory).toBe("d. >= 12 yr. and < 65 yr.");
+    expect(result.cases[0].anesthesia).toBe("Spinal");
+    expect(XLSX.utils.sheet_to_json).toHaveBeenNthCalledWith(1, infoSheet, {
+      header: 1,
+    });
+    expect(XLSX.utils.sheet_to_json).toHaveBeenNthCalledWith(2, caseLogSheet, {
+      header: 1,
+    });
   });
 
   it("resolves with standalone cases when _meta says standalone", async () => {

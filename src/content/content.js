@@ -332,8 +332,8 @@ function mapPeripheralBlockTokenToType(token) {
   return OTHER_PERIPHERAL_NERVE_BLOCKADE_SITE;
 }
 
-function checkPeripheralBlockSite(typeLabel) {
-  const targetType = normalizePeripheralBlockText(typeLabel);
+function getPeripheralBlockSiteOptionsByType() {
+  const optionsByType = new Map();
   const options = document.querySelectorAll(
     `input.cbprocedureid[data-area="${PERIPHERAL_NERVE_BLOCKADE_SITE_AREA}"]`,
   );
@@ -342,17 +342,37 @@ function checkPeripheralBlockSite(typeLabel) {
     const optionType = normalizePeripheralBlockText(
       option.getAttribute("data-type") || "",
     );
-    if (optionType !== targetType) {
+    if (!optionType || optionsByType.has(optionType)) {
       continue;
     }
-    if (!option.checked) {
-      option.click();
-    }
-    return option.checked;
+    optionsByType.set(optionType, option);
   }
 
-  console.warn("Peripheral block checkbox not found:", typeLabel);
-  return false;
+  return optionsByType;
+}
+
+function checkPeripheralBlockSite(
+  typeLabel,
+  optionsByType = null,
+  shouldWarn = true,
+) {
+  const targetType = normalizePeripheralBlockText(typeLabel);
+  const option =
+    optionsByType?.get(targetType) ||
+    getPeripheralBlockSiteOptionsByType().get(targetType);
+
+  if (!option) {
+    if (shouldWarn) {
+      console.warn("Peripheral block checkbox not found:", typeLabel);
+    }
+    return false;
+  }
+
+  if (!option.checked) {
+    option.click();
+  }
+
+  return option.checked;
 }
 
 // Use fuzzysort for fuzzy matching (vendored in bundle)
@@ -541,6 +561,7 @@ function getAttendingOptions() {
 
 function fillCase(caseData) {
   console.log("Filling case:", caseData);
+  const shouldWarn = caseData.showWarnings !== false;
 
   const result = {
     success: true,
@@ -594,7 +615,7 @@ function fillCase(caseData) {
       if (matches.length === 1) {
         if (setSelectValue("Attendings", matches[0].value)) {
           result.filled.push("attending");
-          if (caseData.showWarnings !== false) {
+          if (shouldWarn) {
             result.warnings.push(
               `Attending "${caseData.attending}" not found exactly, used "${matches[0].text}"`,
             );
@@ -611,7 +632,7 @@ function fillCase(caseData) {
     if (attId) {
       if (setSelectValue("Attendings", attId)) {
         result.filled.push("attending");
-        if (caseData.showWarnings !== false) {
+        if (shouldWarn) {
           result.warnings.push(
             `Used default attending: ${caseData.defaultAttending}`,
           );
@@ -627,14 +648,14 @@ function fillCase(caseData) {
     if (facultyId) {
       if (setSelectValue("Attendings", facultyId)) {
         result.filled.push("attending");
-        if (caseData.showWarnings !== false) {
+        if (shouldWarn) {
           result.warnings.push(
             `Attending "${caseData.attending || "(none)"}" not found, used FACULTY, FACULTY`,
           );
         }
       }
     } else {
-      if (caseData.showWarnings !== false) {
+      if (shouldWarn) {
         result.warnings.push(
           `Could not set attending - no matching option found`,
         );
@@ -696,6 +717,7 @@ function fillCase(caseData) {
     const mappedTypes = new Set();
     const mappedToOther = new Set();
     const unmatched = new Set();
+    const peripheralBlockOptionsByType = getPeripheralBlockSiteOptionsByType();
 
     for (const token of peripheralBlockTokens) {
       const typeLabel = mapPeripheralBlockTokenToType(token);
@@ -711,7 +733,13 @@ function fillCase(caseData) {
         continue;
       }
 
-      if (checkPeripheralBlockSite(typeLabel)) {
+      if (
+        checkPeripheralBlockSite(
+          typeLabel,
+          peripheralBlockOptionsByType,
+          shouldWarn,
+        )
+      ) {
         mappedTypes.add(typeLabel);
         result.filled.push(`peripheralBlock:${typeLabel}`);
       } else {
@@ -719,13 +747,13 @@ function fillCase(caseData) {
       }
     }
 
-    if (mappedToOther.size > 0 && caseData.showWarnings !== false) {
+    if (mappedToOther.size > 0 && shouldWarn) {
       result.warnings.push(
         `Mapped peripheral block site to "${OTHER_PERIPHERAL_NERVE_BLOCKADE_SITE}" for: ${[...mappedToOther].join(", ")}`,
       );
     }
 
-    if (unmatched.size > 0 && caseData.showWarnings !== false) {
+    if (unmatched.size > 0 && shouldWarn) {
       result.warnings.push(
         `Could not check peripheral block site for: ${[...unmatched].join(", ")}`,
       );
@@ -883,7 +911,7 @@ function fillCase(caseData) {
 
   if (caseData.auto5EPathology !== false && isFiveE && !pathologyToCheck) {
     pathologyToCheck = "Non-Trauma";
-    if (caseData.showWarnings !== false) {
+    if (shouldWarn) {
       result.warnings.push(
         "Automatically checked Non-Trauma Life-Threatening Pathology for 5E case",
       );
