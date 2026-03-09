@@ -23,6 +23,7 @@ const STANDALONE_HEADERS = [
   "Case ID",
   "Case Date",
   "Supervisor",
+  "Age",
   "Original Procedure",
   "ASA Physical Status",
   "Procedure Category",
@@ -157,6 +158,18 @@ describe("Excel.readMeta", () => {
       ["format_type", "standalone"],
     ]);
     const workbook = { Sheets: { _meta: {} }, SheetNames: ["Sheet1", "_meta"] };
+    const meta = Excel.readMeta(workbook);
+    expect(meta.formatType).toBe("standalone");
+    expect(meta.version).toBe("2");
+  });
+
+  it("falls back to the Info sheet when _meta is absent", () => {
+    XLSX.utils.sheet_to_json.mockReturnValueOnce([
+      ["Field", "Value"],
+      ["Version", "2"],
+      ["Format Type", "standalone"],
+    ]);
+    const workbook = { Sheets: { Info: {} }, SheetNames: ["Info"] };
     const meta = Excel.readMeta(workbook);
     expect(meta.formatType).toBe("standalone");
     expect(meta.version).toBe("2");
@@ -325,6 +338,10 @@ describe("Excel.parseStandaloneRows", () => {
 
   const procedureCases = [
     [
+      "Intubation complex",
+      { anesthesia: "GA", airway: "Oral ETT", vascularAccess: "" },
+    ],
+    [
       "Intubation routine",
       { anesthesia: "GA", airway: "Oral ETT", vascularAccess: "" },
     ],
@@ -332,6 +349,10 @@ describe("Excel.parseStandaloneRows", () => {
     [
       "Arterial line",
       { anesthesia: "", airway: "", vascularAccess: "Arterial Catheter" },
+    ],
+    [
+      "Epidural Blood Patch",
+      { anesthesia: "Epidural", airway: "", vascularAccess: "" },
     ],
     ["Epidural", { anesthesia: "Epidural", airway: "", vascularAccess: "" }],
     ["CSE", { anesthesia: "CSE", airway: "", vascularAccess: "" }],
@@ -393,11 +414,12 @@ describe("Excel.parseStandaloneRows", () => {
     expect(cases[0].comments).toBe("Block: Femoral nerve block");
   });
 
-  it("always sets ageCategory to empty string", () => {
+  it("preserves ageCategory when the standalone export includes Age", () => {
     const row = makeStandaloneRow({
       "Case ID": "CASE-SA-004",
       "Case Date": "9/1/2023",
       Supervisor: "Jones",
+      Age: "d. >= 12 yr. and < 65 yr.",
       "Original Procedure": "Procedure",
       "ASA Physical Status": "3",
       "Procedure Category": "Other (procedure cat)",
@@ -405,6 +427,19 @@ describe("Excel.parseStandaloneRows", () => {
       "Primary Block": "",
     });
     const { cases } = Excel.parseStandaloneRows([STANDALONE_HEADERS, row]);
+    expect(cases[0].ageCategory).toBe("d. >= 12 yr. and < 65 yr.");
+  });
+
+  it("leaves ageCategory blank when the optional Age column is absent", () => {
+    const headersNoAge = STANDALONE_HEADERS.filter((h) => h !== "Age");
+    const row = headersNoAge.map((h) =>
+      h === "Case ID"
+        ? "CASE-SA-004B"
+        : h === "Procedure Name"
+          ? "Spinal"
+          : "val",
+    );
+    const { cases } = Excel.parseStandaloneRows([headersNoAge, row]);
     expect(cases[0].ageCategory).toBe("");
   });
 
@@ -689,6 +724,19 @@ describe("Excel.parseFile", () => {
     await expect(Excel.parseFile({})).rejects.toThrow("No data sheet found");
   });
 
+  it("rejects when all sheets are metadata sheets", async () => {
+    mockFileReader(new Uint8Array([1, 2, 3]));
+    XLSX.read.mockReturnValue({
+      Sheets: { Info: {}, _meta: {} },
+      SheetNames: ["Info", "_meta"],
+    });
+    XLSX.utils.sheet_to_json.mockReturnValueOnce([
+      ["Field", "Value"],
+      ["Format Type", "caselog"],
+    ]);
+    await expect(Excel.parseFile({})).rejects.toThrow("No data sheet found");
+  });
+
   it("reads data from the first non-_meta sheet when _meta is listed first", async () => {
     mockFileReader(new Uint8Array([1, 2, 3]));
     XLSX.read.mockReturnValue({
@@ -715,6 +763,38 @@ describe("Excel.parseFile", () => {
       ]);
     const result = await Excel.parseFile({});
     expect(result.cases[0].caseId).toBe("META-FIRST-001");
+  });
+
+  it("skips the Info sheet and reads metadata from it when _meta is absent", async () => {
+    mockFileReader(new Uint8Array([1, 2, 3]));
+    XLSX.read.mockReturnValue({
+      Sheets: { Info: {}, CaseLog: {} },
+      SheetNames: ["Info", "CaseLog"],
+    });
+    XLSX.utils.sheet_to_json
+      .mockReturnValueOnce([
+        ["Field", "Value"],
+        ["Version", "2"],
+        ["Format Type", "standalone"],
+      ])
+      .mockReturnValueOnce([
+        STANDALONE_HEADERS,
+        makeStandaloneRow({
+          "Case ID": "INFO-SHEET-001",
+          "Case Date": "7/1/2023",
+          Supervisor: "Jones",
+          Age: "d. >= 12 yr. and < 65 yr.",
+          "Original Procedure": "Proc",
+          "ASA Physical Status": "2",
+          "Procedure Category": "Other (procedure cat)",
+          "Procedure Name": "Spinal",
+          "Primary Block": "",
+        }),
+      ]);
+    const result = await Excel.parseFile({});
+    expect(result.cases[0].caseId).toBe("INFO-SHEET-001");
+    expect(result.cases[0].ageCategory).toBe("d. >= 12 yr. and < 65 yr.");
+    expect(result.cases[0].anesthesia).toBe("Spinal");
   });
 
   it("resolves with standalone cases when _meta says standalone", async () => {

@@ -103,6 +103,33 @@ const LIFE_THREATENING_PATHOLOGY_MAP = {
   Trauma: "134",
 };
 
+const PERIPHERAL_NERVE_BLOCKADE_SITE_AREA =
+  "Peripheral Nerve Blockade Site (Optional)";
+const OTHER_PERIPHERAL_NERVE_BLOCKADE_SITE =
+  "Other - peripheral nerve blockade site";
+
+const PERIPHERAL_NERVE_BLOCKADE_SITE_MATCHERS = [
+  { pattern: /\badductor canal\b/, type: "Adductor Canal" },
+  { pattern: /\bankle\b/, type: "Ankle" },
+  { pattern: /\baxillary\b/, type: "Axillary" },
+  { pattern: /\berector spinae plane\b|\besp\b/, type: "Erector Spinae Plane" },
+  { pattern: /\bfemoral\b/, type: "Femoral" },
+  { pattern: /\binfraclavicular\b/, type: "Infraclavicular" },
+  { pattern: /\binterscalene\b/, type: "Interscalene" },
+  { pattern: /\blumbar plexus\b/, type: "Lumbar Plexus" },
+  { pattern: /\bparavertebral\b/, type: "Paravertebral" },
+  { pattern: /\bpopliteal\b/, type: "Popliteal" },
+  { pattern: /\bquadratus lumborum\b|\bql\b/, type: "Quadratus Lumborum" },
+  { pattern: /\bretrobulbar\b/, type: "Retrobulbar" },
+  { pattern: /\bsaphenous\b/, type: "Saphenous" },
+  { pattern: /\bsciatic\b/, type: "Sciatic" },
+  { pattern: /\bsupraclavicular\b/, type: "Supraclavicular" },
+  {
+    pattern: /\btransverse abdominal plane\b|\btap\b/,
+    type: "Transverse Abdominal Plane",
+  },
+];
+
 // Institution IDs
 const INSTITUTION_MAP = {
   CHOP: "12763",
@@ -247,6 +274,85 @@ function uncheckAllProcedures() {
   document.querySelectorAll(".cbprocedureid:checked").forEach((cb) => {
     cb.click();
   });
+}
+
+function normalizePeripheralBlockText(text) {
+  return String(text || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function extractPeripheralBlockTokens(caseData) {
+  if (
+    typeof caseData.primaryBlock === "string" &&
+    caseData.primaryBlock.trim()
+  ) {
+    return caseData.primaryBlock
+      .split(/[,;]+/)
+      .map((token) => token.trim())
+      .filter(Boolean);
+  }
+
+  const comments = String(caseData.comments || "");
+  const match = comments.match(/(?:^|\|\s*)block:\s*(.+)$/i);
+  if (!match) {
+    return [];
+  }
+
+  return match[1]
+    .split(/[,;]+/)
+    .map((token) => token.trim())
+    .filter(Boolean);
+}
+
+function shouldMapPeripheralBlockSite(caseData) {
+  const anesthesia = String(caseData.anesthesia || "").trim();
+  return anesthesia === "PNB Single" || anesthesia === "PNB Continuous";
+}
+
+function mapPeripheralBlockTokenToType(token) {
+  const normalizedToken = normalizePeripheralBlockText(token)
+    .replace(/\bnerve\b/g, " ")
+    .replace(/\bblockade\b/g, " ")
+    .replace(/\bblock\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!normalizedToken) {
+    return null;
+  }
+
+  for (const matcher of PERIPHERAL_NERVE_BLOCKADE_SITE_MATCHERS) {
+    if (matcher.pattern.test(normalizedToken)) {
+      return matcher.type;
+    }
+  }
+
+  return OTHER_PERIPHERAL_NERVE_BLOCKADE_SITE;
+}
+
+function checkPeripheralBlockSite(typeLabel) {
+  const targetType = normalizePeripheralBlockText(typeLabel);
+  const options = document.querySelectorAll(
+    `input.cbprocedureid[data-area="${PERIPHERAL_NERVE_BLOCKADE_SITE_AREA}"]`,
+  );
+
+  for (const option of options) {
+    const optionType = normalizePeripheralBlockText(
+      option.getAttribute("data-type") || "",
+    );
+    if (optionType !== targetType) {
+      continue;
+    }
+    if (!option.checked) {
+      option.click();
+    }
+    return option.checked;
+  }
+
+  console.warn("Peripheral block checkbox not found:", typeLabel);
+  return false;
 }
 
 // Use fuzzysort for fuzzy matching (vendored in bundle)
@@ -579,6 +685,50 @@ function fillCase(caseData) {
       if (checkProcedure(code)) {
         result.filled.push("anesthesia");
       }
+    }
+  }
+
+  // Set Peripheral Nerve Blockade Site from standalone Primary Block
+  const peripheralBlockTokens = shouldMapPeripheralBlockSite(caseData)
+    ? extractPeripheralBlockTokens(caseData)
+    : [];
+  if (peripheralBlockTokens.length > 0) {
+    const mappedTypes = new Set();
+    const mappedToOther = new Set();
+    const unmatched = new Set();
+
+    for (const token of peripheralBlockTokens) {
+      const typeLabel = mapPeripheralBlockTokenToType(token);
+      if (!typeLabel) {
+        continue;
+      }
+
+      if (typeLabel === OTHER_PERIPHERAL_NERVE_BLOCKADE_SITE) {
+        mappedToOther.add(token);
+      }
+
+      if (mappedTypes.has(typeLabel)) {
+        continue;
+      }
+
+      if (checkPeripheralBlockSite(typeLabel)) {
+        mappedTypes.add(typeLabel);
+        result.filled.push(`peripheralBlock:${typeLabel}`);
+      } else {
+        unmatched.add(token);
+      }
+    }
+
+    if (mappedToOther.size > 0 && caseData.showWarnings !== false) {
+      result.warnings.push(
+        `Mapped peripheral block site to "${OTHER_PERIPHERAL_NERVE_BLOCKADE_SITE}" for: ${[...mappedToOther].join(", ")}`,
+      );
+    }
+
+    if (unmatched.size > 0 && caseData.showWarnings !== false) {
+      result.warnings.push(
+        `Could not check peripheral block site for: ${[...unmatched].join(", ")}`,
+      );
     }
   }
 

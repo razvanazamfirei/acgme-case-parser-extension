@@ -99,8 +99,8 @@ describe("constants", () => {
   });
 
   describe("STANDALONE_OPTIONAL_COLUMNS", () => {
-    it("contains Primary Block", () => {
-      expect(STANDALONE_OPTIONAL_COLUMNS).toEqual(["Primary Block"]);
+    it("contains the optional standalone columns", () => {
+      expect(STANDALONE_OPTIONAL_COLUMNS).toEqual(["Age", "Primary Block"]);
     });
   });
 

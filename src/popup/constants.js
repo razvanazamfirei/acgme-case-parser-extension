@@ -102,7 +102,7 @@ export const STANDALONE_REQUIRED_COLUMNS = [
   "Procedure Name",
 ];
 
-export const STANDALONE_OPTIONAL_COLUMNS = ["Primary Block"];
+export const STANDALONE_OPTIONAL_COLUMNS = ["Age", "Primary Block"];
 
 export const STANDALONE_EXPECTED_COLUMNS = [
   ...STANDALONE_REQUIRED_COLUMNS,

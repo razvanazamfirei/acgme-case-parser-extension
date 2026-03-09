@@ -13,9 +13,11 @@ import {
 
 // Maps standalone "Procedure Name" values to caseData fields
 const STANDALONE_PROCEDURE_MAP = {
+  "Intubation complex": { anesthesia: "GA", airway: "Oral ETT" },
   "Intubation routine": { anesthesia: "GA", airway: "Oral ETT" },
   LMA: { anesthesia: "GA", airway: "LMA" },
   "Arterial line": { vascularAccess: "Arterial Catheter" },
+  "Epidural Blood Patch": { anesthesia: "Epidural" },
   Epidural: { anesthesia: "Epidural" },
   CSE: { anesthesia: "CSE" },
   Spinal: { anesthesia: "Spinal" },
@@ -30,6 +32,8 @@ const STANDALONE_PROCEDURE_MAP_LOWER = Object.fromEntries(
   ]),
 );
 
+const METADATA_SHEET_NAMES = new Set(["_meta", "info"]);
+
 export const Excel = {
   async parseFile(file) {
     return new Promise((resolve, reject) => {
@@ -40,7 +44,7 @@ export const Excel = {
           const data = new Uint8Array(e.target.result);
           const workbook = XLSX.read(data, { type: "array" });
           const meta = this.readMeta(workbook);
-          const dataSheetName = workbook.SheetNames.find((n) => n !== "_meta");
+          const dataSheetName = this.findDataSheetName(workbook);
           if (!dataSheetName) {
             reject(new Error("No data sheet found"));
             return;
@@ -66,7 +70,10 @@ export const Excel = {
   },
 
   readMeta(workbook) {
-    const metaSheet = workbook.Sheets._meta;
+    const metaSheetName =
+      workbook.SheetNames.find((name) => name === "_meta") ||
+      workbook.SheetNames.find((name) => this.isMetadataSheetName(name));
+    const metaSheet = metaSheetName ? workbook.Sheets[metaSheetName] : null;
     if (!metaSheet) {
       return { version: "1", formatType: "caselog" };
     }
@@ -76,7 +83,10 @@ export const Excel = {
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
       if (row?.[0] && row[1] !== undefined) {
-        meta[row[0]] = String(row[1]);
+        const key = this.normalizeMetaKey(row[0]);
+        if (key) {
+          meta[key] = String(row[1]);
+        }
       }
     }
 
@@ -84,6 +94,37 @@ export const Excel = {
       version: meta.version || "1",
       formatType: (meta.format_type || "caselog").trim().toLowerCase(),
     };
+  },
+
+  isMetadataSheetName(name) {
+    return METADATA_SHEET_NAMES.has(
+      String(name || "")
+        .trim()
+        .toLowerCase(),
+    );
+  },
+
+  normalizeMetaKey(key) {
+    return String(key || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+  },
+
+  findDataSheetName(workbook) {
+    const sheetNames = workbook.SheetNames || [];
+    const caseLogSheet = sheetNames.find(
+      (name) =>
+        String(name || "")
+          .trim()
+          .toLowerCase() === "caselog",
+    );
+    if (caseLogSheet) {
+      return caseLogSheet;
+    }
+
+    return sheetNames.find((name) => !this.isMetadataSheetName(name));
   },
 
   parseRows(rows, meta = {}) {
@@ -206,7 +247,7 @@ export const Excel = {
         caseId: this.getString(row, colIndex["Case ID"]),
         date: this.formatDate(row[colIndex["Case Date"]]),
         attending: this.getString(row, colIndex.Supervisor),
-        ageCategory: "",
+        ageCategory: this.getString(row, colIndex.Age),
         comments,
         asa: this.getString(row, colIndex["ASA Physical Status"]),
         anesthesia: procedureFields.anesthesia || "",

@@ -111,6 +111,24 @@ function buildFormDOM() {
     <input type="checkbox" class="cbprocedureid" id="156707" />
     <input type="checkbox" class="cbprocedureid" id="156708" />
     <input type="checkbox" class="cbprocedureid" id="1256341" />
+    <!-- Peripheral Nerve Blockade Site -->
+    <input type="checkbox" class="cbprocedureid" id="1911477" data-area="Peripheral Nerve Blockade Site (Optional)" data-type="Adductor Canal" />
+    <input type="checkbox" class="cbprocedureid" id="156730" data-area="Peripheral Nerve Blockade Site (Optional)" data-type="Ankle" />
+    <input type="checkbox" class="cbprocedureid" id="156734" data-area="Peripheral Nerve Blockade Site (Optional)" data-type="Axillary" />
+    <input type="checkbox" class="cbprocedureid" id="1911478" data-area="Peripheral Nerve Blockade Site (Optional)" data-type="Erector Spinae Plane" />
+    <input type="checkbox" class="cbprocedureid" id="156735" data-area="Peripheral Nerve Blockade Site (Optional)" data-type="Femoral" />
+    <input type="checkbox" class="cbprocedureid" id="156732" data-area="Peripheral Nerve Blockade Site (Optional)" data-type="Infraclavicular" />
+    <input type="checkbox" class="cbprocedureid" id="156731" data-area="Peripheral Nerve Blockade Site (Optional)" data-type="Interscalene" />
+    <input type="checkbox" class="cbprocedureid" id="156737" data-area="Peripheral Nerve Blockade Site (Optional)" data-type="Lumbar Plexus" />
+    <input type="checkbox" class="cbprocedureid" id="156739" data-area="Peripheral Nerve Blockade Site (Optional)" data-type="Paravertebral" />
+    <input type="checkbox" class="cbprocedureid" id="156729" data-area="Peripheral Nerve Blockade Site (Optional)" data-type="Popliteal" />
+    <input type="checkbox" class="cbprocedureid" id="1911476" data-area="Peripheral Nerve Blockade Site (Optional)" data-type="Quadratus Lumborum" />
+    <input type="checkbox" class="cbprocedureid" id="156738" data-area="Peripheral Nerve Blockade Site (Optional)" data-type="Retrobulbar" />
+    <input type="checkbox" class="cbprocedureid" id="156740" data-area="Peripheral Nerve Blockade Site (Optional)" data-type="Saphenous" />
+    <input type="checkbox" class="cbprocedureid" id="156736" data-area="Peripheral Nerve Blockade Site (Optional)" data-type="Sciatic" />
+    <input type="checkbox" class="cbprocedureid" id="156733" data-area="Peripheral Nerve Blockade Site (Optional)" data-type="Supraclavicular" />
+    <input type="checkbox" class="cbprocedureid" id="1911475" data-area="Peripheral Nerve Blockade Site (Optional)" data-type="Transverse Abdominal Plane" />
+    <input type="checkbox" class="cbprocedureid" id="1256340" data-area="Peripheral Nerve Blockade Site (Optional)" data-type="Other - peripheral nerve blockade site" />
     <!-- Difficult Airway -->
     <input type="radio" id="CaseTypes_148" name="difficultAirway" value="148" />
     <input type="radio" id="CaseTypes_149" name="difficultAirway" value="149" />
@@ -947,6 +965,62 @@ describe("fillCase", () => {
   it("handles PNB Continuous anesthesia", () => {
     fillCase({ ...baseCase, anesthesia: "PNB Continuous" });
     expect(checked("156647")).toBe(true);
+  });
+
+  it("maps standalone Block comments to peripheral block site checkbox", () => {
+    fillCase({
+      ...baseCase,
+      anesthesia: "PNB Single",
+      comments: "Procedure | Block: Adductor canal block",
+    });
+    expect(checked("1911477")).toBe(true);
+  });
+
+  it("maps multiple standalone block entries from comments", () => {
+    fillCase({
+      ...baseCase,
+      anesthesia: "PNB Single",
+      comments: "Procedure | Block: Femoral nerve block, Sciatic nerve block",
+    });
+    expect(checked("156735")).toBe(true);
+    expect(checked("156736")).toBe(true);
+  });
+
+  it("maps unknown standalone block terms to Other peripheral site", () => {
+    const result = fillCase({
+      ...baseCase,
+      anesthesia: "PNB Single",
+      comments: "Procedure | Block: Brachial plexus block",
+      showWarnings: true,
+    });
+    expect(checked("1256340")).toBe(true);
+    expect(
+      result.warnings.some((w) =>
+        w.includes("Other - peripheral nerve blockade site"),
+      ),
+    ).toBe(true);
+  });
+
+  it("ignores standalone Primary Block values for non-peripheral cases", () => {
+    const result = fillCase({
+      ...baseCase,
+      anesthesia: "Spinal",
+      comments: "Procedure | Block: Lumbar",
+      showWarnings: true,
+    });
+    expect(checked("1256340")).toBe(false);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it("prefers explicit primaryBlock field when provided", () => {
+    fillCase({
+      ...baseCase,
+      anesthesia: "PNB Single",
+      comments: "Procedure | Block: Adductor canal block",
+      primaryBlock: "Sciatic nerve block",
+    });
+    expect(checked("156736")).toBe(true);
+    expect(checked("1911477")).toBe(false);
   });
 
   it("handles Spinal anesthesia", () => {
