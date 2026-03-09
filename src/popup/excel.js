@@ -249,6 +249,7 @@ export const Excel = {
         attending: this.getString(row, colIndex.Supervisor),
         ageCategory: this.getString(row, colIndex.Age),
         comments,
+        primaryBlock,
         asa: this.getString(row, colIndex["ASA Physical Status"]),
         anesthesia: procedureFields.anesthesia || "",
         airway: procedureFields.airway || "",

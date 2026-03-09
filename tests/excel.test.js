@@ -175,6 +175,41 @@ describe("Excel.readMeta", () => {
     expect(meta.version).toBe("2");
   });
 
+  it("prefers _meta over Info when both metadata sheets exist", () => {
+    const metaSheet = { name: "_meta" };
+    const infoSheet = { name: "Info" };
+    XLSX.utils.sheet_to_json.mockClear();
+    XLSX.utils.sheet_to_json.mockImplementation((sheet) => {
+      if (sheet === metaSheet) {
+        return [
+          ["key", "value"],
+          ["version", "2"],
+          ["format_type", "standalone"],
+        ];
+      }
+
+      if (sheet === infoSheet) {
+        return [
+          ["Field", "Value"],
+          ["Version", "99"],
+          ["Format Type", "caselog"],
+        ];
+      }
+
+      return [];
+    });
+    const workbook = {
+      Sheets: { Info: infoSheet, _meta: metaSheet },
+      SheetNames: ["Info", "_meta"],
+    };
+    const meta = Excel.readMeta(workbook);
+    expect(meta).toEqual({ version: "2", formatType: "standalone" });
+    expect(XLSX.utils.sheet_to_json).toHaveBeenCalledTimes(1);
+    expect(XLSX.utils.sheet_to_json).toHaveBeenCalledWith(metaSheet, {
+      header: 1,
+    });
+  });
+
   it("uses defaults for missing keys in _meta", () => {
     XLSX.utils.sheet_to_json.mockReturnValueOnce([["key", "value"]]);
     const workbook = { Sheets: { _meta: {} }, SheetNames: ["_meta"] };
@@ -397,6 +432,21 @@ describe("Excel.parseStandaloneRows", () => {
     const { cases } = Excel.parseStandaloneRows([STANDALONE_HEADERS, row]);
     expect(cases[0].comments).toContain("Hip Replacement");
     expect(cases[0].comments).toContain("Block: Adductor canal block");
+  });
+
+  it("stores primaryBlock on parsed standalone cases", () => {
+    const row = makeStandaloneRow({
+      "Case ID": "CASE-SA-002B",
+      "Case Date": "8/1/2023",
+      Supervisor: "Jones",
+      "Original Procedure": "Hip Replacement",
+      "ASA Physical Status": "2",
+      "Procedure Category": "Other (procedure cat)",
+      "Procedure Name": "Peripheral nerve block",
+      "Primary Block": "Adductor canal block",
+    });
+    const { cases } = Excel.parseStandaloneRows([STANDALONE_HEADERS, row]);
+    expect(cases[0].primaryBlock).toBe("Adductor canal block");
   });
 
   it("sets block-only comment when original procedure is blank", () => {

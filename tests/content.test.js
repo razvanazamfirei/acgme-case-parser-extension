@@ -1,5 +1,6 @@
 import fuzzysort from "fuzzysort";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Excel } from "../src/popup/excel.js";
 import "../src/content/content.js";
 
 const contentTestApi = globalThis.__CONTENT_TEST_API__;
@@ -1053,6 +1054,45 @@ describe("fillCase", () => {
       comments: "Procedure | Block: Adductor canal block",
       primaryBlock: "Sciatic nerve block",
     });
+    expect(checked("156736")).toBe(true);
+    expect(checked("1911477")).toBe(false);
+  });
+
+  it("uses parseStandaloneRows primaryBlock output before conflicting comments", () => {
+    const standaloneHeaders = [
+      "Case ID",
+      "Case Date",
+      "Supervisor",
+      "Age",
+      "Original Procedure",
+      "ASA Physical Status",
+      "Procedure Category",
+      "Procedure Name",
+      "Primary Block",
+    ];
+    const standaloneRow = [
+      "CASE-SA-100",
+      "7/1/2023",
+      "SMITH, JOHN",
+      "a",
+      "Procedure",
+      "2",
+      "Other (procedure cat)",
+      "Peripheral nerve block",
+      "Sciatic nerve block",
+    ];
+    const { cases } = Excel.parseStandaloneRows([
+      standaloneHeaders,
+      standaloneRow,
+    ]);
+
+    fillCase({
+      ...baseCase,
+      ...cases[0],
+      comments: "Procedure | Block: Adductor canal block",
+    });
+
+    expect(cases[0].primaryBlock).toBe("Sciatic nerve block");
     expect(checked("156736")).toBe(true);
     expect(checked("1911477")).toBe(false);
   });
