@@ -113,6 +113,12 @@ function buildFormDOM() {
     <input type="checkbox" class="cbprocedureid" id="156708" />
     <input type="checkbox" class="cbprocedureid" id="1256341" />
     <!-- Peripheral Nerve Blockade Site -->
+    <input type="checkbox" class="cbprocedureid" id="n100" data-area="Neuraxial Blockade Site (Optional)" data-type="Caudal" />
+    <input type="checkbox" class="cbprocedureid" id="n101" data-area="Neuraxial Blockade Site (Optional)" data-type="Cervical" />
+    <input type="checkbox" class="cbprocedureid" id="n102" data-area="Neuraxial Blockade Site (Optional)" data-type="Lumbar" />
+    <input type="checkbox" class="cbprocedureid" id="n103" data-area="Neuraxial Blockade Site (Optional)" data-type="T 1-7" />
+    <input type="checkbox" class="cbprocedureid" id="n104" data-area="Neuraxial Blockade Site (Optional)" data-type="T 8-12" />
+    <!-- Peripheral Nerve Blockade Site -->
     <input type="checkbox" class="cbprocedureid" id="1911477" data-area="Peripheral Nerve Blockade Site (Optional)" data-type="Adductor Canal" />
     <input type="checkbox" class="cbprocedureid" id="156730" data-area="Peripheral Nerve Blockade Site (Optional)" data-type="Ankle" />
     <input type="checkbox" class="cbprocedureid" id="156734" data-area="Peripheral Nerve Blockade Site (Optional)" data-type="Axillary" />
@@ -573,6 +579,8 @@ describe("fillCase", () => {
     procedureCategory: "Cardiac with CPB",
     vascularAccess: "",
     monitoring: "",
+    neuraxialBlockadeSite: "",
+    peripheralNerveBlockadeSite: "",
     institution: "",
     defaultAttending: "",
     cardiacAutoFill: false,
@@ -1006,6 +1014,29 @@ describe("fillCase", () => {
     querySelectorAllSpy.mockRestore();
   });
 
+  it("fills explicit peripheral blockade site selections", () => {
+    fillCase({
+      ...baseCase,
+      anesthesia: "PNB Single",
+      peripheralNerveBlockadeSite: "Femoral; Sciatic",
+      comments: "Procedure | Block: Adductor canal block",
+    });
+
+    expect(checked("156735")).toBe(true);
+    expect(checked("156736")).toBe(true);
+    expect(checked("1911477")).toBe(false);
+  });
+
+  it("fills explicit neuraxial blockade site selections", () => {
+    fillCase({
+      ...baseCase,
+      anesthesia: "Spinal",
+      neuraxialBlockadeSite: "Lumbar",
+    });
+
+    expect(checked("n102")).toBe(true);
+  });
+
   it("maps unknown standalone block terms to Other peripheral site", () => {
     const result = fillCase({
       ...baseCase,
@@ -1036,14 +1067,14 @@ describe("fillCase", () => {
     expect(console.warn).not.toHaveBeenCalled();
   });
 
-  it("ignores standalone Primary Block values for non-peripheral cases", () => {
+  it("maps standalone Block comments to neuraxial site for neuraxial anesthesia", () => {
     const result = fillCase({
       ...baseCase,
       anesthesia: "Spinal",
       comments: "Procedure | Block: Lumbar",
       showWarnings: true,
     });
-    expect(checked("1256340")).toBe(false);
+    expect(checked("n102")).toBe(true);
     expect(result.warnings).toEqual([]);
   });
 

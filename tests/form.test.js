@@ -28,6 +28,30 @@ function buildFormDOM() {
       <option value="">Select</option>
       <option value="Cardiac with CPB">Cardiac with CPB</option>
     </select>
+    <details id="neuraxialBlockadeSection" class="hidden">
+      <input
+        type="checkbox"
+        name="neuraxialBlockadeSite"
+        value="Lumbar" />
+      <input
+        type="checkbox"
+        name="neuraxialBlockadeSite"
+        value="T 1-7" />
+    </details>
+    <details id="peripheralBlockadeSection" class="hidden">
+      <input
+        type="checkbox"
+        name="peripheralNerveBlockadeSite"
+        value="Femoral" />
+      <input
+        type="checkbox"
+        name="peripheralNerveBlockadeSite"
+        value="Sciatic" />
+      <input
+        type="checkbox"
+        name="peripheralNerveBlockadeSite"
+        value="Other - peripheral nerve blockade site" />
+    </details>
     <input type="checkbox" name="airway" value="Oral ETT" />
     <input type="checkbox" name="airway" value="LMA" />
     <input type="checkbox" name="vascular" value="Arterial Catheter" />
@@ -376,6 +400,64 @@ describe("Form", () => {
       );
       expect(nonTrauma.checked).toBe(false);
     });
+
+    it("populates derived peripheral blockade site selections from comments", () => {
+      Form.populate({
+        caseId: "C-004",
+        date: "",
+        attending: "",
+        comments: "Procedure | Block: Sciatic nerve block",
+        ageCategory: "",
+        asa: "",
+        anesthesia: "PNB Single",
+        procedureCategory: "",
+        airway: "",
+        vascularAccess: "",
+        monitoring: "",
+        difficultAirway: "",
+        lifeThreateningPathology: "",
+      });
+
+      expect(
+        document.querySelector(
+          'input[name="peripheralNerveBlockadeSite"][value="Sciatic"]',
+        ).checked,
+      ).toBe(true);
+      expect(
+        document
+          .getElementById("peripheralBlockadeSection")
+          .classList.contains("hidden"),
+      ).toBe(false);
+    });
+
+    it("populates derived neuraxial blockade site selections from comments", () => {
+      Form.populate({
+        caseId: "C-005",
+        date: "",
+        attending: "",
+        comments: "Procedure | Block: Lumbar",
+        ageCategory: "",
+        asa: "",
+        anesthesia: "Spinal",
+        procedureCategory: "",
+        airway: "",
+        vascularAccess: "",
+        monitoring: "",
+        difficultAirway: "",
+        lifeThreateningPathology: "",
+      });
+
+      expect(
+        document.querySelector(
+          'input[name="neuraxialBlockadeSite"][value="Lumbar"]',
+        ).checked,
+      ).toBe(true);
+      expect(
+        document
+          .getElementById("neuraxialBlockadeSection")
+          .classList.contains("hidden"),
+      ).toBe(false);
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -386,6 +468,7 @@ describe("Form", () => {
     it("returns all form field values including settings", () => {
       document.getElementById("caseId").value = "TEST-001";
       document.getElementById("attending").value = "SMITH";
+      document.getElementById("anesthesia").value = "GA";
       State.settings.defaultInstitution = "CHOP";
       const data = Form.getData();
       expect(data.caseId).toBe("TEST-001");
@@ -393,6 +476,33 @@ describe("Form", () => {
       expect(data.institution).toBe("CHOP");
       expect(data.cardiacAutoFill).toBe(true);
       expect(data.auto5EPathology).toBe(true);
+      expect(data.neuraxialBlockadeSite).toBe("");
+      expect(data.peripheralNerveBlockadeSite).toBe("");
+    });
+
+    it("returns blockade site selections only for compatible anesthesia types", () => {
+      document.getElementById("anesthesia").innerHTML = `
+        <option value="">Select</option>
+        <option value="GA">GA</option>
+        <option value="Spinal">Spinal</option>
+        <option value="PNB Single">PNB Single</option>
+      `;
+      document.getElementById("anesthesia").value = "PNB Single";
+      document.querySelector(
+        'input[name="neuraxialBlockadeSite"][value="Lumbar"]',
+      ).checked = true;
+      document.querySelector(
+        'input[name="peripheralNerveBlockadeSite"][value="Femoral"]',
+      ).checked = true;
+
+      let data = Form.getData();
+      expect(data.neuraxialBlockadeSite).toBe("");
+      expect(data.peripheralNerveBlockadeSite).toBe("Femoral");
+
+      document.getElementById("anesthesia").value = "Spinal";
+      data = Form.getData();
+      expect(data.neuraxialBlockadeSite).toBe("Lumbar");
+      expect(data.peripheralNerveBlockadeSite).toBe("");
     });
   });
 });

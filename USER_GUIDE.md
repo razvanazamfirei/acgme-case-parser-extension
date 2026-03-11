@@ -1,6 +1,6 @@
 # ACGME Case Submitter User Guide
 
-Version: `1.4.0`
+Version: `1.4.2`
 
 ## 1. What this extension does
 

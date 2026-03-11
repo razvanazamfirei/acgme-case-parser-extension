@@ -17,6 +17,7 @@ vi.mock("../src/popup/form.js", () => ({
     })),
     getRadioGroup: vi.fn(() => ""),
     setRadioGroup: vi.fn(),
+    syncBlockadeSiteVisibility: vi.fn(),
     getData: vi.fn(() => ({})),
   },
 }));
@@ -112,6 +113,15 @@ function buildAppDOM() {
     <select id="ageCategory"><option value="">-</option></select>
     <select id="anesthesia"><option value="">-</option></select>
     <select id="procedureCategory"><option value="">-</option></select>
+    <details id="neuraxialBlockadeSection" class="hidden">
+      <input type="checkbox" name="neuraxialBlockadeSite" value="Lumbar" />
+    </details>
+    <details id="peripheralBlockadeSection" class="hidden">
+      <input
+        type="checkbox"
+        name="peripheralNerveBlockadeSite"
+        value="Femoral" />
+    </details>
     <span id="caseStatus" class="status-badge pending">Pending</span>
     <div id="validationSummary" class="hidden">
       <span id="validationText"></span>
@@ -168,6 +178,14 @@ describe("App components", () => {
     it("does nothing when appVersion element is missing", () => {
       document.getElementById("appVersion").remove();
       Metadata.setVersion(); // should not throw
+    });
+  });
+
+  describe("EventHandlers", () => {
+    it("syncs blockade site visibility when anesthesia changes", () => {
+      EventHandlers.register();
+      document.getElementById("anesthesia").dispatchEvent(new Event("change"));
+      expect(Form.syncBlockadeSiteVisibility).toHaveBeenCalled();
     });
   });
 
