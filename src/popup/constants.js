@@ -38,6 +38,8 @@ export const DOM = {
   asa: "asa",
   anesthesia: "anesthesia",
   procedureCategory: "procedureCategory",
+  neuraxialBlockadeSection: "neuraxialBlockadeSection",
+  peripheralBlockadeSection: "peripheralBlockadeSection",
   comments: "comments",
   caseStatus: "caseStatus",
 

@@ -55,15 +55,15 @@ export const UI = {
   },
 
   toggleSection(id) {
-    this.get(id).classList.toggle("hidden");
+    this.get(id)?.classList.toggle("hidden");
   },
 
   showSection(id) {
-    this.get(id).classList.remove("hidden");
+    this.get(id)?.classList.remove("hidden");
   },
 
   hideSection(id) {
-    this.get(id).classList.add("hidden");
+    this.get(id)?.classList.add("hidden");
   },
 
   updateStats() {

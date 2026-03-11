@@ -2,6 +2,12 @@
  * Form manipulation and data handling
  */
 
+import {
+  isNeuraxialBlockAnesthesia,
+  isPeripheralBlockAnesthesia,
+  resolveNeuraxialBlockadeSiteSelections,
+  resolvePeripheralBlockadeSiteSelections,
+} from "../shared/blockade-sites.js";
 import { DOM } from "./constants.js";
 import { State } from "./state.js";
 import { UI } from "./ui.js";
@@ -171,6 +177,16 @@ export const Form = {
       "monitoring",
       caseData.monitoring,
     );
+    this.setCheckboxGroup(
+      "neuraxialBlockadeSite",
+      resolveNeuraxialBlockadeSiteSelections(caseData).selectedTypes.join("; "),
+    );
+    this.setCheckboxGroup(
+      "peripheralNerveBlockadeSite",
+      resolvePeripheralBlockadeSiteSelections(caseData).selectedTypes.join(
+        "; ",
+      ),
+    );
 
     // Show match badges for partial matches
     UI.showMatchBadge(DOM.ageCategory, ageCategoryMatch);
@@ -185,6 +201,7 @@ export const Form = {
     );
 
     this.apply5ELogic(caseData);
+    this.syncBlockadeSiteVisibility(caseData.anesthesia);
     this.updateStatusBadge();
   },
 
@@ -207,17 +224,25 @@ export const Form = {
   },
 
   getData() {
+    const anesthesia = UI.get(DOM.anesthesia).value;
+
     return {
       caseId: UI.get(DOM.caseId).value,
       date: UI.get(DOM.date).value,
       attending: UI.get(DOM.attending).value,
       ageCategory: UI.get(DOM.ageCategory).value,
       asa: UI.get(DOM.asa).value,
-      anesthesia: UI.get(DOM.anesthesia).value,
+      anesthesia,
       airway: this.getCheckboxGroup("airway"),
       procedureCategory: UI.get(DOM.procedureCategory).value,
       vascularAccess: this.getCheckboxGroup("vascular"),
       monitoring: this.getCheckboxGroup("monitoring"),
+      neuraxialBlockadeSite: isNeuraxialBlockAnesthesia(anesthesia)
+        ? this.getCheckboxGroup("neuraxialBlockadeSite")
+        : "",
+      peripheralNerveBlockadeSite: isPeripheralBlockAnesthesia(anesthesia)
+        ? this.getCheckboxGroup("peripheralNerveBlockadeSite")
+        : "",
       difficultAirway: this.getRadioGroup("difficultAirway"),
       lifeThreateningPathology: this.getRadioGroup("lifeThreateningPathology"),
       comments: UI.get(DOM.comments).value,
@@ -255,5 +280,22 @@ export const Form = {
       warnings,
       hasWarnings: warnings.length > 0,
     };
+  },
+
+  syncBlockadeSiteVisibility(anesthesia = UI.get(DOM.anesthesia)?.value || "") {
+    const showNeuraxial = isNeuraxialBlockAnesthesia(anesthesia);
+    const showPeripheral = isPeripheralBlockAnesthesia(anesthesia);
+
+    if (showNeuraxial) {
+      UI.showSection(DOM.neuraxialBlockadeSection);
+    } else {
+      UI.hideSection(DOM.neuraxialBlockadeSection);
+    }
+
+    if (showPeripheral) {
+      UI.showSection(DOM.peripheralBlockadeSection);
+    } else {
+      UI.hideSection(DOM.peripheralBlockadeSection);
+    }
   },
 };

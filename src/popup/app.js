@@ -366,6 +366,20 @@ const Session = {
           cb.checked = false;
         });
       document
+        .querySelectorAll(
+          'input[type="checkbox"][name="neuraxialBlockadeSite"]',
+        )
+        .forEach((cb) => {
+          cb.checked = false;
+        });
+      document
+        .querySelectorAll(
+          'input[type="checkbox"][name="peripheralNerveBlockadeSite"]',
+        )
+        .forEach((cb) => {
+          cb.checked = false;
+        });
+      document
         .querySelectorAll('input[type="radio"][name="difficultAirway"]')
         .forEach((radio) => {
           radio.checked = radio.value === "";
@@ -417,6 +431,8 @@ const Session = {
       // Hide case preview and navigation sections
       UI.hideSection(DOM.navSection);
       UI.hideSection(DOM.previewSection);
+      UI.hideSection(DOM.neuraxialBlockadeSection);
+      UI.hideSection(DOM.peripheralBlockadeSection);
 
       // Show upload section
       UI.showSection(DOM.uploadSection);
@@ -608,6 +624,9 @@ const EventHandlers = {
     ];
     requiredFields.forEach((fieldId) => {
       addListener(fieldId, "change", () => {
+        if (fieldId === DOM.anesthesia) {
+          Form.syncBlockadeSiteVisibility();
+        }
         const validation = Form.validate();
         UI.showValidation(validation);
       });
@@ -643,6 +662,7 @@ const App = {
       await Storage.loadSettings();
       Settings.applyToUI();
       await Session.restore();
+      Form.syncBlockadeSiteVisibility();
       EventHandlers.register();
       if (process.env.NODE_ENV === "development") {
         console.log("ACGME Case Submitter initialized successfully");
