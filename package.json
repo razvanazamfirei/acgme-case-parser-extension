@@ -42,18 +42,18 @@
     "release:publish": "bun run release:prepare && bun run release:tag"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.7",
+    "@biomejs/biome": "^2.4.8",
     "@crxjs/vite-plugin": "^2.4.0",
-    "@tailwindcss/postcss": "^4.2.1",
-    "@vitest/coverage-v8": "^4.1.0",
+    "@tailwindcss/postcss": "^4.2.2",
+    "@vitest/coverage-v8": "^4.1.1",
     "autoprefixer": "^10.4.27",
-    "happy-dom": "^20.8.4",
+    "happy-dom": "^20.8.7",
     "postcss": "^8.5.8",
-    "stylelint": "^17.4.0",
+    "stylelint": "^17.5.0",
     "stylelint-config-standard": "^40.0.0",
-    "tailwindcss": "^4.2.1",
-    "vite": "^8.0.0",
-    "vitest": "^4.1.0"
+    "tailwindcss": "^4.2.2",
+    "vite": "^8.0.2",
+    "vitest": "^4.1.1"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
