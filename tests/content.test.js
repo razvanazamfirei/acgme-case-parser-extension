@@ -790,6 +790,42 @@ describe("fillCase", () => {
     expect(checked("156707")).toBe(false);
   });
 
+  it("auto-checks DLT for Intrathoracic non-cardiac when airway is empty", () => {
+    const result = fillCase({
+      ...baseCase,
+      procedureCategory: "Intrathoracic non-cardiac",
+      airway: "",
+      cardiacAutoFill: false,
+    });
+    expect(checked("156683")).toBe(true);
+    expect(checked("1256336")).toBe(true);
+    expect(result.filled).toContain("thoracic:DLT");
+  });
+
+  it("skips thoracic DLT auto-fill when airway already specifies DLT", () => {
+    const result = fillCase({
+      ...baseCase,
+      procedureCategory: "Intrathoracic non-cardiac",
+      airway: "DLT",
+      cardiacAutoFill: false,
+    });
+    expect(checked("1256336")).toBe(true);
+    expect(result.filled).toContain("airway:DLT");
+    expect(result.filled).not.toContain("thoracic:DLT");
+  });
+
+  it("does not auto-check DLT for non-thoracic procedure categories", () => {
+    fillCase({
+      ...baseCase,
+      procedureCategory: "Cardiac without CPB",
+      airway: "",
+      cardiacAutoFill: false,
+      vascularAccess: "",
+      monitoring: "",
+    });
+    expect(checked("1256336")).toBe(false);
+  });
+
   it("checks vascular access", () => {
     fillCase({ ...baseCase, vascularAccess: "Central Venous Catheter" });
     expect(checked("1256339")).toBe(true);

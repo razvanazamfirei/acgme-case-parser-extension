@@ -806,6 +806,17 @@ function fillCase(caseData) {
     }
   }
 
+  // Intrathoracic cases: default to DLT when airway data does not already specify it
+  const isThoracic = procCat === "Intrathoracic non-cardiac";
+  if (isThoracic) {
+    const existingAirway = (caseData.airway || "").toLowerCase();
+    if (!existingAirway.includes("dlt")) {
+      if (checkProcedure(AIRWAY_MAP.DLT)) {
+        result.filled.push("thoracic:DLT");
+      }
+    }
+  }
+
   // Always check vascular access from data (for both cardiac and non-cardiac)
   if (caseData.vascularAccess) {
     caseData.vascularAccess.split(";").forEach((item) => {
