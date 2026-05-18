@@ -26,10 +26,10 @@ An optional metadata sheet (preferably `_meta`, with `Info` supported as a
 fallback) controls parsing behaviour. Its first row is treated as a header and
 is ignored. Subsequent rows contain key-value pairs in columns A and B:
 
-| Key           | Values                  | Default   |
+| Key | Values | Default |
 | ------------- | ----------------------- | --------- |
 | `format_type` | `caselog`, `standalone` | `caselog` |
-| `version`     | string                  | `1`       |
+| `version` | string | `1` |
 
 Metadata keys are trimmed and case-normalized before lookup, and non-alphanumeric
 separators are normalized to underscores. This means the parser treats
@@ -102,17 +102,17 @@ Behavior:
 
 `Procedure Name` canonical values and their mappings:
 
-| `Procedure Name`         | `anesthesia` | `airway`   | `vascularAccess`    |
+| `Procedure Name` | `anesthesia` | `airway` | `vascularAccess` |
 | ------------------------ | ------------ | ---------- | ------------------- |
-| `Intubation complex`     | `GA`         | `Oral ETT` |                     |
-| `Intubation routine`     | `GA`         | `Oral ETT` |                     |
-| `LMA`                    | `GA`         | `LMA`      |                     |
-| `Arterial line`          |              |            | `Arterial Catheter` |
-| `Epidural Blood Patch`   | `Epidural`   |            |                     |
-| `Epidural`               | `Epidural`   |            |                     |
-| `CSE`                    | `CSE`        |            |                     |
-| `Spinal`                 | `Spinal`     |            |                     |
-| `Peripheral nerve block` | `PNB Single` |            |                     |
+| `Intubation complex` | `GA` | `Oral ETT` | |
+| `Intubation routine` | `GA` | `Oral ETT` | |
+| `LMA` | `GA` | `LMA` | |
+| `Arterial line` | | | `Arterial Catheter` |
+| `Epidural Blood Patch` | `Epidural` | | |
+| `Epidural` | `Epidural` | | |
+| `CSE` | `CSE` | | |
+| `Spinal` | `Spinal` | | |
+| `Peripheral nerve block` | `PNB Single` | | |
 
 ## Accepted Value Sets
 
