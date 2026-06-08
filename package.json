@@ -43,7 +43,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.16",
-    "@crxjs/vite-plugin": "^2.4.0",
+    "@crxjs/vite-plugin": "^2.5.0",
     "@tailwindcss/postcss": "^4.3.0",
     "@vitest/coverage-v8": "^4.1.8",
     "autoprefixer": "^10.5.0",
