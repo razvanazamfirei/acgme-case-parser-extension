@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.4.16/schema.json",
   "root": true,
   "vcs": {
     "clientKind": "git",
@@ -21,7 +21,8 @@
       "!!**/coverage",
       "!!**/*.min.js",
       "!!**/public/xlsx.min.js",
-      "!!**/mock-website"
+      "!!**/mock-website",
+      "!!**/target.html"
     ]
   },
   "formatter": {
