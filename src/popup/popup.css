@@ -367,7 +367,8 @@ body {
   gap: 0.25rem;
 }
 
-.form-field label {
+.form-field label,
+.form-field .field-label {
   display: block;
   font-size: 0.875rem;
   font-weight: 500;
