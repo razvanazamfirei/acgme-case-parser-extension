@@ -6,6 +6,8 @@ import { DOM } from "./constants.js";
 import { State } from "./state.js";
 
 export const UI = {
+  autoHideTimer: null,
+
   get(id) {
     return document.getElementById(id);
   },
@@ -18,12 +20,26 @@ export const UI = {
     message.className = `status-message ${type}`;
     message.textContent = msg;
 
+    // Drop any pending auto-hide, otherwise an earlier success message can
+    // hide this one before it has been on screen for its full duration.
+    if (this.autoHideTimer !== null) {
+      clearTimeout(this.autoHideTimer);
+      this.autoHideTimer = null;
+    }
+
     if (type === "success" || type === "info") {
-      setTimeout(() => section.classList.add("hidden"), 3000);
+      this.autoHideTimer = setTimeout(() => {
+        this.autoHideTimer = null;
+        section.classList.add("hidden");
+      }, 3000);
     }
   },
 
   hideStatus() {
+    if (this.autoHideTimer !== null) {
+      clearTimeout(this.autoHideTimer);
+      this.autoHideTimer = null;
+    }
     this.get(DOM.statusSection).classList.add("hidden");
   },
 

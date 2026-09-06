@@ -144,6 +144,9 @@ const BeastMode = {
     // Re-enable action buttons so user can fix things
     this.enableActionButtons();
 
+    // The pause prompts offer a way out, so surface the control that provides it
+    UI.showSection(DOM.beastModeStopBtn);
+
     UI.showStatus(message || "BEAST mode paused", "info");
   },
 
@@ -159,6 +162,7 @@ const BeastMode = {
 
     // Disable action buttons again
     this.disableActionButtons();
+    UI.hideSection(DOM.beastModeStopBtn);
 
     UI.showStatus("BEAST MODE RESUMED - Processing cases...", "info");
 
@@ -173,6 +177,10 @@ const BeastMode = {
     this.isActive = false;
     this.shouldStop = true;
     this.isPaused = false;
+
+    // A paused run is parked on this callback. It has to be settled, otherwise
+    // processAllPending() waits forever on a run that is already over.
+    const pendingResume = this.resumeCallback;
     this.resumeCallback = null;
 
     // Update UI
@@ -184,6 +192,15 @@ const BeastMode = {
 
     // Re-enable action buttons
     this.enableActionButtons();
+    UI.hideSection(DOM.beastModeStopBtn);
+
+    pendingResume?.();
+  },
+
+  waitForResume() {
+    return new Promise((resolve) => {
+      this.resumeCallback = resolve;
+    });
   },
 
   async processAllPending() {
@@ -193,22 +210,28 @@ const BeastMode = {
     // Start from currentIndex (for resuming) or 0
     const startIndex = this.currentIndex || 0;
 
+    const announceStop = () => {
+      UI.showStatus(
+        `BEAST mode stopped. Processed ${processed} cases.`,
+        "info",
+      );
+    };
+
     for (let i = startIndex; i < totalCases; i++) {
       this.currentIndex = i;
 
       if (this.shouldStop) {
-        UI.showStatus(
-          `BEAST mode stopped. Processed ${processed} cases.`,
-          "info",
-        );
+        announceStop();
         return;
       }
 
       // Wait if paused
       if (this.isPaused) {
-        await new Promise((resolve) => {
-          this.resumeCallback = resolve;
-        });
+        await this.waitForResume();
+        if (this.shouldStop) {
+          announceStop();
+          return;
+        }
       }
 
       // Skip non-pending cases
@@ -231,9 +254,11 @@ const BeastMode = {
         );
 
         // Wait for user to fix and continue
-        await new Promise((resolve) => {
-          this.resumeCallback = resolve;
-        });
+        await this.waitForResume();
+        if (this.shouldStop) {
+          announceStop();
+          return;
+        }
 
         // Re-validate after user fixes
         const revalidation = Form.validate();
@@ -262,9 +287,11 @@ const BeastMode = {
           this.pause(
             `Case ${i + 1} failed to submit. Check the ACGME form and click CONTINUE to retry or STOP to end.`,
           );
-          await new Promise((resolve) => {
-            this.resumeCallback = resolve;
-          });
+          await this.waitForResume();
+          if (this.shouldStop) {
+            announceStop();
+            return;
+          }
           i--; // Retry this case
           continue;
         }
@@ -277,9 +304,11 @@ const BeastMode = {
         this.pause(
           `Error processing case ${i + 1}: ${error.message}. Click CONTINUE to retry or STOP to end.`,
         );
-        await new Promise((resolve) => {
-          this.resumeCallback = resolve;
-        });
+        await this.waitForResume();
+        if (this.shouldStop) {
+          announceStop();
+          return;
+        }
         i--; // Retry this case
       }
     }
@@ -593,6 +622,7 @@ const EventHandlers = {
         BeastMode.start();
       }
     });
+    addListener(DOM.beastModeStopBtn, "click", () => BeastMode.stop());
 
     // Settings
     addListener(DOM.settingsToggle, "click", () => Settings.toggle());

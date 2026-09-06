@@ -49,6 +49,7 @@ export const DOM = {
   fillSubmitBtn: "fillSubmitBtn",
   beastModeBtn: "beastModeBtn",
   beastModeText: "beastModeText",
+  beastModeStopBtn: "beastModeStopBtn",
 
   // Settings
   settingsToggle: "settingsToggle",

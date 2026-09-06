@@ -100,6 +100,7 @@ function buildAppDOM() {
     <button id="beastModeBtn" class="bg-red-500 hover:bg-red-600 border-red-500">
       <span id="beastModeText">START BEAST MODE</span>
     </button>
+    <button id="beastModeStopBtn" class="hidden">STOP BEAST MODE</button>
     <button id="settingsToggle">Settings</button>
     <input type="range" id="settingSubmitDelay" value="0.5" />
     <span id="submitDelayValue">0.5s</span>
@@ -717,6 +718,36 @@ describe("App components", () => {
       vi.useRealTimers();
     });
 
+    it("processAllPending() unwinds when stopped while parked on a pause", async () => {
+      vi.useFakeTimers();
+      State.setCases([{ caseId: "C1" }]);
+      Form.validate.mockReturnValue({
+        isValid: true,
+        missing: [],
+        warnings: [],
+        hasWarnings: false,
+      });
+      ACGMEForm.fill.mockResolvedValue({ success: true, submitted: true });
+      Navigation.goToCase.mockImplementation(() => {});
+
+      BeastMode.isActive = true;
+      BeastMode.isPaused = true;
+      BeastMode.shouldStop = false;
+
+      const promise = BeastMode.processAllPending();
+      await Promise.resolve();
+      BeastMode.stop();
+      await vi.runAllTimersAsync();
+      // Awaiting this hangs if stop() leaves the pause promise unsettled
+      await promise;
+
+      expect(ACGMEForm.fill).not.toHaveBeenCalled();
+      expect(document.getElementById("statusMessage").textContent).toContain(
+        "BEAST mode stopped",
+      );
+      vi.useRealTimers();
+    });
+
     it("processAllPending() retries when revalidation still fails", async () => {
       vi.useFakeTimers();
       State.setCases([{ caseId: "C1" }]);
@@ -984,6 +1015,14 @@ describe("App components", () => {
         .mockResolvedValue(undefined);
       document.getElementById("beastModeBtn").click();
       expect(startSpy).toHaveBeenCalled();
+    });
+
+    it("beastModeStopBtn click calls BeastMode.stop while paused", () => {
+      BeastMode.isActive = true;
+      BeastMode.isPaused = true;
+      const stopSpy = vi.spyOn(BeastMode, "stop").mockImplementation(() => {});
+      document.getElementById("beastModeStopBtn").click();
+      expect(stopSpy).toHaveBeenCalled();
     });
 
     it("settingsToggle click calls Settings.toggle", () => {
