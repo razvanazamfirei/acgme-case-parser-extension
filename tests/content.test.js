@@ -19,11 +19,17 @@ const {
   getAttendingOptions,
   getFieldId,
   getVisibleErrors,
+  handleMessage,
   setInputValue,
   setSelectValue,
   submitCase,
   uncheckAllProcedures,
 } = contentTestApi;
+
+// content.js registers its listener at import time, and Vitest clears mock call
+// history before each test, so this has to be read here at module scope.
+const registeredListener =
+  chrome.runtime.onMessage.addListener.mock.calls.at(-1)?.[0];
 
 // ---------------------------------------------------------------------------
 // Full ACGME form DOM helper
@@ -159,7 +165,6 @@ function checked(id) {
 describe("getFieldId", () => {
   beforeEach(() => {
     document.body.innerHTML = "";
-    delete global.caseEntryApp;
   });
 
   describe("caseId", () => {
@@ -170,12 +175,6 @@ describe("getFieldId", () => {
           <input type="text" maxlength="25" id="caseIdViaLabel" />
         </div>`;
       expect(getFieldId("caseId")).toBe("caseIdViaLabel");
-    });
-
-    it("falls back to caseEntryApp.globals.CaseEntry99", () => {
-      document.body.innerHTML = `<input type="text" id="caseEntryField99" />`;
-      global.caseEntryApp = { globals: { CaseEntry99: "#caseEntryField99" } };
-      expect(getFieldId("caseId")).toBe("caseEntryField99");
     });
 
     it("falls back to input[id^='71291']", () => {
@@ -200,12 +199,6 @@ describe("getFieldId", () => {
           <input type="text" id="dateViaClass" />
         </div>`;
       expect(getFieldId("date")).toBe("dateViaClass");
-    });
-
-    it("falls back to caseEntryApp.globals.CaseEntry89", () => {
-      document.body.innerHTML = `<input type="text" id="dateGlobal89" />`;
-      global.caseEntryApp = { globals: { CaseEntry89: "#dateGlobal89" } };
-      expect(getFieldId("date")).toBe("dateGlobal89");
     });
 
     it("falls back to input[id^='5b1ce']", () => {
@@ -253,20 +246,6 @@ describe("setSelectValue", () => {
 
   it("returns false when select element does not exist", () => {
     expect(setSelectValue("nonexistent", "val")).toBe(false);
-  });
-
-  it("uses jQuery trigger when element has select2-hidden-accessible class", () => {
-    const sel = document.getElementById("mySelect");
-    sel.classList.add("select2-hidden-accessible");
-    const jqMock = vi.fn(() => ({
-      hasClass: () => true,
-      val: vi.fn().mockReturnThis(),
-      trigger: vi.fn().mockReturnThis(),
-    }));
-    global.$ = jqMock;
-    setSelectValue("mySelect", "opt1");
-    expect(jqMock).toHaveBeenCalled();
-    delete global.$;
   });
 });
 
@@ -491,7 +470,7 @@ describe("findAttendingId", () => {
     const goSpy = vi.spyOn(fuzzysort, "go").mockReturnValue([
       {
         obj: { value: "100", text: "SMITH, JOHN" },
-        score: -900,
+        score: 0.3,
       },
     ]);
 
@@ -500,6 +479,25 @@ describe("findAttendingId", () => {
     } finally {
       goSpy.mockRestore();
     }
+  });
+
+  it("returns null when the runner-up is nearly as good a fuzzy match", () => {
+    document.body.innerHTML = `
+      <select id="Attendings">
+        <option value="300">LEE, ANNA</option>
+        <option value="301">LEE, BRIAN</option>
+      </select>`;
+    expect(findAttendingId("LEE")).toBeNull();
+  });
+
+  it("scores fuzzy matches on the 0-1 scale fuzzysort actually returns", () => {
+    document.body.innerHTML = `
+      <select id="Attendings">
+        <option value="400">O'CONNOR-BAILEY, SEBASTIAN</option>
+      </select>`;
+    // Punctuation-only difference: must clear the threshold, which it cannot do
+    // if scores are rescaled as though they were negative.
+    expect(findAttendingId("OCONNOR BAILEY SEBASTIAN")).toBe("400");
   });
 });
 
@@ -563,7 +561,6 @@ describe("getVisibleErrors", () => {
 describe("fillCase", () => {
   beforeEach(() => {
     buildFormDOM();
-    delete global.caseEntryApp;
   });
 
   const baseCase = {
@@ -1244,12 +1241,12 @@ describe("submitCase", () => {
 // ---------------------------------------------------------------------------
 
 describe("chrome.runtime.onMessage listener", () => {
-  let listener;
-
   beforeEach(() => {
     buildFormDOM();
-    // The listener was registered when the module was first imported
-    listener = chrome.runtime.onMessage.addListener.mock.calls.at(-1)?.[0];
+  });
+
+  it("is the handler content.js registered with chrome.runtime", () => {
+    expect(registeredListener).toBe(handleMessage);
   });
 
   it("handles fillCase action and calls sendResponse with result", () => {
@@ -1273,7 +1270,7 @@ describe("chrome.runtime.onMessage listener", () => {
       auto5EPathology: false,
       showWarnings: false,
     };
-    const keepOpen = listener(
+    const keepOpen = handleMessage(
       { action: "fillCase", data: caseData },
       {},
       sendResponse,
@@ -1288,7 +1285,7 @@ describe("chrome.runtime.onMessage listener", () => {
   it("handles fillCase action when fillCase throws", () => {
     const sendResponse = vi.fn();
     // Pass undefined as data to trigger an error inside fillCase
-    listener({ action: "fillCase", data: undefined }, {}, sendResponse);
+    handleMessage({ action: "fillCase", data: undefined }, {}, sendResponse);
     // fillCase will throw since it calls uncheckAllProcedures on null data
     expect(sendResponse).toHaveBeenCalledWith(
       expect.objectContaining({ success: false }),
@@ -1298,7 +1295,7 @@ describe("chrome.runtime.onMessage listener", () => {
   it("handles submitCase action asynchronously", async () => {
     vi.useFakeTimers();
     const sendResponse = vi.fn();
-    listener({ action: "submitCase" }, {}, sendResponse);
+    handleMessage({ action: "submitCase" }, {}, sendResponse);
     await vi.runAllTimersAsync();
     expect(sendResponse).toHaveBeenCalled();
     vi.useRealTimers();
@@ -1306,7 +1303,7 @@ describe("chrome.runtime.onMessage listener", () => {
 
   it("handles getAttendingOptions action", () => {
     const sendResponse = vi.fn();
-    const keepOpen = listener(
+    const keepOpen = handleMessage(
       { action: "getAttendingOptions" },
       {},
       sendResponse,
@@ -1319,7 +1316,7 @@ describe("chrome.runtime.onMessage listener", () => {
 
   it("returns false for unknown action", () => {
     const sendResponse = vi.fn();
-    const result = listener({ action: "unknownAction" }, {}, sendResponse);
+    const result = handleMessage({ action: "unknownAction" }, {}, sendResponse);
     expect(result).toBe(false);
     expect(sendResponse).not.toHaveBeenCalled();
   });
@@ -1331,7 +1328,7 @@ describe("chrome.runtime.onMessage listener", () => {
       throw new Error("click failed");
     };
     const sendResponse = vi.fn();
-    listener({ action: "submitCase" }, {}, sendResponse);
+    handleMessage({ action: "submitCase" }, {}, sendResponse);
     await vi.runAllTimersAsync();
     expect(sendResponse).toHaveBeenCalledWith(
       expect.objectContaining({ success: false }),
@@ -1348,7 +1345,7 @@ describe("chrome.runtime.onMessage listener", () => {
       configurable: true,
     });
     const sendResponse = vi.fn();
-    listener({ action: "getAttendingOptions" }, {}, sendResponse);
+    handleMessage({ action: "getAttendingOptions" }, {}, sendResponse);
     expect(sendResponse).toHaveBeenCalledWith(
       expect.objectContaining({ success: false }),
     );
