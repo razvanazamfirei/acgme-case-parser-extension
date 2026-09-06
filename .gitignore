@@ -13,6 +13,12 @@ test-report.junit.xml
 example/
 mock-website/
 
+# Saved ACGME page snapshot - contains a real session token and personal IDs
+target.html
+
+# Local agent state
+.cursor/hooks/state/
+
 # Release
 *.zip
 
