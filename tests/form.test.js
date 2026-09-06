@@ -52,8 +52,9 @@ function buildFormDOM() {
         name="peripheralNerveBlockadeSite"
         value="Other - peripheral nerve blockade site" />
     </details>
-    <input type="checkbox" name="airway" value="Oral ETT" />
-    <input type="checkbox" name="airway" value="LMA" />
+    <input type="checkbox" name="airway" value="ETT" />
+    <input type="checkbox" name="airway" value="Nasal ETT" />
+    <input type="checkbox" name="airway" value="Supraglottic Airway" />
     <input type="checkbox" name="vascular" value="Arterial Catheter" />
     <input type="checkbox" name="monitoring" value="TEE" />
     <input type="radio" name="difficultAirway" value="" />
@@ -146,14 +147,14 @@ describe("Form", () => {
   // -------------------------------------------------------------------------
 
   describe("setCheckboxGroup()", () => {
+    const isChecked = (value) =>
+      document.querySelector(`input[name="airway"][value="${value}"]`).checked;
+
     it("clears all checkboxes when value is empty", () => {
-      document.querySelector('input[name="airway"][value="Oral ETT"]').checked =
+      document.querySelector('input[name="airway"][value="ETT"]').checked =
         true;
       Form.setCheckboxGroup("airway", "");
-      expect(
-        document.querySelector('input[name="airway"][value="Oral ETT"]')
-          .checked,
-      ).toBe(false);
+      expect(isChecked("ETT")).toBe(false);
     });
 
     it("returns none type when value is empty", () => {
@@ -162,42 +163,43 @@ describe("Form", () => {
     });
 
     it("checks matching checkbox (exact match)", () => {
-      Form.setCheckboxGroup("airway", "Oral ETT");
-      expect(
-        document.querySelector('input[name="airway"][value="Oral ETT"]')
-          .checked,
-      ).toBe(true);
-      expect(
-        document.querySelector('input[name="airway"][value="LMA"]').checked,
-      ).toBe(false);
+      Form.setCheckboxGroup("airway", "ETT");
+      expect(isChecked("ETT")).toBe(true);
+      expect(isChecked("Supraglottic Airway")).toBe(false);
+    });
+
+    it("checks only the most specific checkbox when one value contains another", () => {
+      Form.setCheckboxGroup("airway", "Nasal ETT");
+      expect(isChecked("Nasal ETT")).toBe(true);
+      expect(isChecked("ETT")).toBe(false);
+    });
+
+    it("does not check 'Nasal ETT' when the case only used an oral ETT", () => {
+      Form.setCheckboxGroup("airway", "ETT");
+      expect(isChecked("Nasal ETT")).toBe(false);
     });
 
     it("returns exact type when all matches are exact", () => {
-      const result = Form.setCheckboxGroup("airway", "Oral ETT");
+      const result = Form.setCheckboxGroup("airway", "ETT");
       expect(result.type).toBe("exact");
     });
 
     it("handles partial match when value is a substring of checkbox value", () => {
-      Form.setCheckboxGroup("airway", "oral"); // partial: "oral" ⊂ "oral ett"
-      const result = Form.setCheckboxGroup("airway", "oral");
+      // partial: "supraglottic" ⊂ "supraglottic airway"
+      const result = Form.setCheckboxGroup("airway", "supraglottic");
       expect(result.type).toBe("partial");
+      expect(isChecked("Supraglottic Airway")).toBe(true);
     });
 
     it("returns partial type when mix of exact and partial", () => {
-      // Add a checkbox with a longer value
-      document.body.insertAdjacentHTML(
-        "beforeend",
-        '<input type="checkbox" name="airway" value="LMA Extended" />',
-      );
-      const result = Form.setCheckboxGroup("airway", "Oral ETT; LMA Ex");
+      const result = Form.setCheckboxGroup("airway", "ETT; Supraglottic");
       expect(result.type).toBe("partial");
+      expect(isChecked("ETT")).toBe(true);
+      expect(isChecked("Supraglottic Airway")).toBe(true);
     });
 
     it("tracks unmatched values", () => {
-      const result = Form.setCheckboxGroup(
-        "airway",
-        "Oral ETT; Unknown Device",
-      );
+      const result = Form.setCheckboxGroup("airway", "ETT; Unknown Device");
       expect(result.matches.unmatched).toContain("unknown device");
     });
 
@@ -207,14 +209,9 @@ describe("Form", () => {
     });
 
     it("handles semicolon-separated values", () => {
-      Form.setCheckboxGroup("airway", "Oral ETT; LMA");
-      expect(
-        document.querySelector('input[name="airway"][value="Oral ETT"]')
-          .checked,
-      ).toBe(true);
-      expect(
-        document.querySelector('input[name="airway"][value="LMA"]').checked,
-      ).toBe(true);
+      Form.setCheckboxGroup("airway", "ETT; Supraglottic Airway");
+      expect(isChecked("ETT")).toBe(true);
+      expect(isChecked("Supraglottic Airway")).toBe(true);
     });
   });
 
@@ -228,13 +225,19 @@ describe("Form", () => {
     });
 
     it("returns checked values joined by '; '", () => {
-      document.querySelector('input[name="airway"][value="Oral ETT"]').checked =
+      document.querySelector('input[name="airway"][value="ETT"]').checked =
         true;
-      document.querySelector('input[name="airway"][value="LMA"]').checked =
-        true;
+      document.querySelector(
+        'input[name="airway"][value="Supraglottic Airway"]',
+      ).checked = true;
       const result = Form.getCheckboxGroup("airway");
-      expect(result).toContain("Oral ETT");
-      expect(result).toContain("LMA");
+      expect(result).toContain("ETT");
+      expect(result).toContain("Supraglottic Airway");
+    });
+
+    it("reports a nasal intubation exactly once", () => {
+      Form.setCheckboxGroup("airway", "Nasal ETT");
+      expect(Form.getCheckboxGroup("airway")).toBe("Nasal ETT");
     });
   });
 

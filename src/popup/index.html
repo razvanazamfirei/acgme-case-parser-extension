@@ -584,7 +584,7 @@
             </div>
           </details>
           <div class="form-field">
-            <label>Airway Management</label>
+            <span class="field-label">Airway Management</span>
             <div class="flex flex-wrap gap-3 mt-1">
               <label class="checkbox-label">
                 <input
@@ -654,7 +654,7 @@
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div class="form-field">
-              <label>Vascular Access</label>
+              <span class="field-label">Vascular Access</span>
               <div class="space-y-1.5 mt-1">
                 <label class="checkbox-label">
                   <input
@@ -691,7 +691,7 @@
               </div>
             </div>
             <div class="form-field">
-              <label>Monitoring</label>
+              <span class="field-label">Monitoring</span>
               <div class="space-y-1.5 mt-1">
                 <label class="checkbox-label">
                   <input
@@ -722,7 +722,7 @@
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div class="form-field">
-              <label>
+              <span class="field-label">
                 Difficult Airway
                 <span class="info-tooltip">
                   <svg
@@ -749,7 +749,7 @@
                     difficulty during procedure. None: standard airway.</span
                   >
                 </span>
-              </label>
+              </span>
               <div class="space-y-1.5 mt-1">
                 <label class="checkbox-label">
                   <input
@@ -779,7 +779,7 @@
               </div>
             </div>
             <div class="form-field">
-              <label>Life-Threatening Pathology</label>
+              <span class="field-label">Life-Threatening Pathology</span>
               <div class="space-y-1.5 mt-1">
                 <label class="checkbox-label">
                   <input
@@ -883,6 +883,13 @@
               class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 border-2 border-red-500 rounded-md text-sm font-bold cursor-pointer transition-all bg-red-500 text-white hover:bg-red-600 hover:border-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
               title="Automatically fill and submit all pending cases">
               <span id="beastModeText">START BEAST MODE</span>
+            </button>
+            <button
+              type="button"
+              id="beastModeStopBtn"
+              class="hidden w-full px-4 py-2 mt-2 border-2 border-gray-400 rounded-md text-sm font-bold text-center cursor-pointer transition-all bg-white text-gray-700 hover:bg-gray-100"
+              title="End BEAST mode and leave the remaining cases pending">
+              STOP BEAST MODE
             </button>
             <p class="text-xs text-gray-500 text-center mt-2">
               Auto-fills and submits all pending cases (0.5-1s delay)

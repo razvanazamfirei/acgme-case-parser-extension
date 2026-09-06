@@ -1,7 +1,7 @@
 import { codecovVitePlugin } from "@codecov/vite-plugin";
 import { crx } from "@crxjs/vite-plugin";
 import { defineConfig } from "vite";
-import manifest from "./manifest.json";
+import manifest from "./manifest.json" with { type: "json" };
 
 const shouldUseCodecovVitePlugin = process.env.CODECOV_VITE_PLUGIN === "true";
 

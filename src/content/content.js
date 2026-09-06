@@ -119,6 +119,8 @@ const INSTITUTION_MAP = {
   PPMC: "12871",
 };
 
+// This script runs in an isolated world, so page globals (caseEntryApp, jQuery)
+// are unreachable. Field discovery must go through the DOM only.
 function getFieldId(type) {
   if (type === "caseId") {
     // Try multiple approaches to find the Case ID field
@@ -138,24 +140,13 @@ function getFieldId(type) {
       }
     }
 
-    // 2. Check if the page has the field ID in JavaScript globals
-    if (
-      typeof caseEntryApp !== "undefined" &&
-      caseEntryApp?.globals?.CaseEntry99
-    ) {
-      const fieldId = caseEntryApp.globals.CaseEntry99.replace("#", "");
-      if (document.getElementById(fieldId)) {
-        return fieldId;
-      }
-    }
-
-    // 3. Try partial ID match (more flexible)
+    // 2. Try partial ID match (more flexible)
     const byPartialId = document.querySelector('input[id^="71291"]');
     if (byPartialId) {
       return byPartialId.id;
     }
 
-    // 4. Fallback: first input with maxlength="25"
+    // 3. Fallback: first input with maxlength="25"
     const el = document.querySelector('input[type="text"][maxlength="25"]');
     return el ? el.id : null;
   }
@@ -170,24 +161,13 @@ function getFieldId(type) {
       }
     }
 
-    // 2. Check if the page has the field ID in JavaScript globals
-    if (
-      typeof caseEntryApp !== "undefined" &&
-      caseEntryApp?.globals?.CaseEntry89
-    ) {
-      const fieldId = caseEntryApp.globals.CaseEntry89.replace("#", "");
-      if (document.getElementById(fieldId)) {
-        return fieldId;
-      }
-    }
-
-    // 3. Try partial ID match
+    // 2. Try partial ID match
     const byPartialId = document.querySelector('input[id^="5b1ce"]');
     if (byPartialId) {
       return byPartialId.id;
     }
 
-    // 4. Fallback to old selector
+    // 3. Fallback to old selector
     const el = document.querySelector('input[id^="5b1c"]');
     return el ? el.id : null;
   }
@@ -203,15 +183,7 @@ function setSelectValue(selectId, value) {
   }
 
   select.value = value;
-
-  if (
-    typeof $ !== "undefined" &&
-    $(select).hasClass("select2-hidden-accessible")
-  ) {
-    $(select).val(value).trigger("change");
-  } else {
-    select.dispatchEvent(new Event("change", { bubbles: true }));
-  }
+  select.dispatchEvent(new Event("change", { bubbles: true }));
   return true;
 }
 
@@ -348,7 +320,12 @@ function fillBlockadeSiteSelections({
   return unmatched;
 }
 
-// Use fuzzysort for fuzzy matching (vendored in bundle)
+// Use fuzzysort for fuzzy matching (vendored in bundle).
+// Scores are 0 (worst) to 1 (exact match). fuzzysort already discards names
+// whose characters do not all appear in order, so these gates only have to
+// reject weak and ambiguous matches.
+const MIN_FUZZY_SCORE = 0.35;
+const MIN_FUZZY_MARGIN = 0.15;
 
 // Attending lookup with high-confidence matching only
 function findAttendingId(name, returnAllMatches = false) {
@@ -467,19 +444,25 @@ function findAttendingId(name, returnAllMatches = false) {
     return initialMatches[0].value;
   }
 
-  // Fallback: Try fuzzy matching with high threshold
+  // Fallback: Try fuzzy matching. Match against the normalized option text so
+  // punctuation differences ("SMITH, JOHN" vs "smith john") do not cost score.
   const options = Array.from(select.options)
     .filter((opt) => opt.value && opt.value !== "")
-    .map((opt) => ({ value: opt.value, text: opt.text }));
+    .map((opt) => ({
+      value: opt.value,
+      text: opt.text,
+      normalized: normalize(opt.text),
+    }));
 
   if (options.length === 0) {
     return null;
   }
 
-  // Use fuzzysort for fuzzy matching
+  // fuzzysort scores run 0 (worst) to 1 (exact). Search below the accept
+  // threshold so a near-tie runner-up is still visible to the margin check.
   const results = fuzzysort.go(nameNormalized, options, {
-    key: "text",
-    threshold: -10000, // High threshold (lower score = better match)
+    key: "normalized",
+    threshold: MIN_FUZZY_SCORE - MIN_FUZZY_MARGIN,
     limit: 5, // Only consider top 5 matches
   });
 
@@ -487,31 +470,22 @@ function findAttendingId(name, returnAllMatches = false) {
     return null;
   }
 
-  // Convert fuzzysort score to 0-1 scale (higher is better)
-  // fuzzysort scores are negative (closer to 0 is better)
-  const normalizeScore = (score) => {
-    // Typical scores range from -1000 (poor) to 0 (perfect)
-    return Math.max(0, Math.min(1, (score + 1000) / 1000));
-  };
-
   const topMatch = results[0];
-  const topScore = normalizeScore(topMatch.score);
 
-  // Require 85% similarity
-  if (topScore < 0.85) {
+  if (topMatch.score < MIN_FUZZY_SCORE) {
     return null;
   }
 
-  // If there's a second match, require 10% difference
-  if (results.length > 1) {
-    const secondScore = normalizeScore(results[1].score);
-    if (topScore - secondScore < 0.1) {
-      return null; // Too ambiguous
-    }
+  // Refuse to guess when the runner-up is nearly as good a match
+  if (
+    results.length > 1 &&
+    topMatch.score - results[1].score < MIN_FUZZY_MARGIN
+  ) {
+    return null;
   }
 
   console.log(
-    `Fuzzy match found: "${name}" -> "${topMatch.obj.text}" (${(topScore * 100).toFixed(1)}%)`,
+    `Fuzzy match found: "${name}" -> "${topMatch.obj.text}" (${(topMatch.score * 100).toFixed(1)}%)`,
   );
   return topMatch.obj.value;
 }
@@ -779,30 +753,35 @@ function fillCase(caseData) {
     const existingVascular = (caseData.vascularAccess || "").toLowerCase();
     const existingMonitoring = (caseData.monitoring || "").toLowerCase();
 
-    // TEE (if not already specified)
-    if (!existingMonitoring.includes("tee")) {
-      checkProcedure(MONITORING_MAP.TEE);
-      result.filled.push("cardiac:TEE");
-    }
-    // Arterial (if not already specified)
-    if (!existingVascular.includes("arterial")) {
-      checkProcedure(VASCULAR_MAP["Arterial Catheter"]);
-      result.filled.push("cardiac:Arterial");
-    }
-    // Central line (if not already specified)
-    if (!existingVascular.includes("central")) {
-      checkProcedure(VASCULAR_MAP["Central Venous Catheter"]);
-      result.filled.push("cardiac:Central");
-    }
-    // Ultrasound guided (if not already specified)
-    if (!existingVascular.includes("ultrasound")) {
-      checkProcedure(VASCULAR_MAP["Ultrasound Guided"]);
-      result.filled.push("cardiac:Ultrasound");
-    }
-    // PA Catheter (if not already specified)
-    if (!existingVascular.includes("pa catheter")) {
-      checkProcedure(VASCULAR_MAP["PA Catheter"]);
-      result.filled.push("cardiac:PA");
+    // Each entry is skipped when the case data already specifies it
+    const cardiacDefaults = [
+      ["cardiac:TEE", MONITORING_MAP.TEE, !existingMonitoring.includes("tee")],
+      [
+        "cardiac:Arterial",
+        VASCULAR_MAP["Arterial Catheter"],
+        !existingVascular.includes("arterial"),
+      ],
+      [
+        "cardiac:Central",
+        VASCULAR_MAP["Central Venous Catheter"],
+        !existingVascular.includes("central"),
+      ],
+      [
+        "cardiac:Ultrasound",
+        VASCULAR_MAP["Ultrasound Guided"],
+        !existingVascular.includes("ultrasound"),
+      ],
+      [
+        "cardiac:PA",
+        VASCULAR_MAP["PA Catheter"],
+        !existingVascular.includes("pa catheter"),
+      ],
+    ];
+
+    for (const [fieldKey, code, shouldCheck] of cardiacDefaults) {
+      if (shouldCheck && checkProcedure(code)) {
+        result.filled.push(fieldKey);
+      }
     }
   }
 
@@ -969,11 +948,13 @@ if (import.meta.env.MODE === "test") {
     fillCase,
     submitCase,
     getVisibleErrors,
+    handleMessage,
   };
 }
 
-// Listen for messages from the popup
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+// Handles messages from the popup. Returning true keeps the message channel
+// open so sendResponse can be called asynchronously.
+function handleMessage(message, _sender, sendResponse) {
   if (message.action === "fillCase") {
     try {
       const result = fillCase(message.data);
@@ -982,7 +963,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       console.error("Error filling case:", error);
       sendResponse({ success: false, errors: [error.message] });
     }
-    return true; // Keep channel open for async response
+    return true;
   }
 
   if (message.action === "submitCase") {
@@ -1007,6 +988,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 
   return false; // Not our message
-});
+}
+
+chrome.runtime.onMessage.addListener(handleMessage);
 
 console.log("ACGME Case Submitter content script loaded.");

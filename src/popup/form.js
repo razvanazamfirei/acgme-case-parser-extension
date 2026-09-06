@@ -61,7 +61,7 @@ export const Form = {
   },
 
   setCheckboxGroup(name, valuesString) {
-    const checkboxes = document.querySelectorAll(`input[name="${name}"]`);
+    const checkboxes = [...document.querySelectorAll(`input[name="${name}"]`)];
     const matchInfo = { exact: [], partial: [], unmatched: [] };
 
     checkboxes.forEach((cb) => {
@@ -72,30 +72,37 @@ export const Form = {
       return { type: "none", matches: matchInfo };
     }
 
-    const values = valuesString.split(";").map((v) => v.trim().toLowerCase());
+    const values = valuesString
+      .split(";")
+      .map((v) => v.trim().toLowerCase())
+      .filter(Boolean);
 
-    checkboxes.forEach((cb) => {
-      const cbValue = cb.value.toLowerCase();
-      const exactMatch = values.find((v) => v === cbValue);
-      const partialMatch = values.find(
-        (v) => cbValue.includes(v) || v.includes(cbValue),
-      );
-
-      if (exactMatch) {
-        cb.checked = true;
-        matchInfo.exact.push({ original: exactMatch, matched: cb.value });
-      } else if (partialMatch) {
-        cb.checked = true;
-        matchInfo.partial.push({ original: partialMatch, matched: cb.value });
+    // Resolve each value to at most one checkbox. Selecting every checkbox that
+    // merely shares a substring would make "Nasal ETT" also tick "ETT", which
+    // logs the case as both a nasal and an oral intubation.
+    for (const value of values) {
+      const exact = checkboxes.find((cb) => cb.value.toLowerCase() === value);
+      if (exact) {
+        exact.checked = true;
+        matchInfo.exact.push({ original: value, matched: exact.value });
+        continue;
       }
-    });
 
-    // Track unmatched values
-    const matchedOriginals = [
-      ...matchInfo.exact.map((m) => m.original),
-      ...matchInfo.partial.map((m) => m.original),
-    ];
-    matchInfo.unmatched = values.filter((v) => !matchedOriginals.includes(v));
+      // No exact match, so fall back to the most specific substring candidate
+      const partial = checkboxes
+        .filter((cb) => {
+          const cbValue = cb.value.toLowerCase();
+          return cbValue.includes(value) || value.includes(cbValue);
+        })
+        .sort((a, b) => b.value.length - a.value.length)[0];
+
+      if (partial) {
+        partial.checked = true;
+        matchInfo.partial.push({ original: value, matched: partial.value });
+      } else {
+        matchInfo.unmatched.push(value);
+      }
+    }
 
     const hasPartial = matchInfo.partial.length > 0;
     const hasExact = matchInfo.exact.length > 0;
