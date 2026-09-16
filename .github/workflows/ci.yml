@@ -40,12 +40,3 @@ jobs:
           disable_search: true
           report_type: test_results
           token: ${{ secrets.CODECOV_TOKEN }}
-      - name: Upload coverage to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v6
-        with:
-          files: ./coverage/lcov.info
-          flags: unittests
-          fail_ci_if_error: ${{ github.event_name != 'pull_request' || secrets.CODECOV_TOKEN != '' || github.event.pull_request.head.repo.full_name == github.repository }}
-          verbose: true
-          token: ${{ secrets.CODECOV_TOKEN }}
