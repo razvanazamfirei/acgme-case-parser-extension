@@ -1,6 +1,6 @@
 # Chrome Extension Changelog
 
-## Unreleased
+## 1.5.1 - 2026-09-24
 
 ### Fixed
 
@@ -11,6 +11,7 @@
 
 ### Changed
 
+- Updated Biome to 2.5.14 and refreshed build and test dependencies.
 - Popup footer version is now derived from `chrome.runtime.getManifest().version`
   instead of hardcoded HTML text
 - File upload controls were restyled so the filename display and choose button

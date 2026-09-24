@@ -1,6 +1,6 @@
 # ACGME Case Submitter: Shareable Quick Guide
 
-Version: `1.3.3`
+Version: `1.5.1`
 
 ## What this extension does
 
