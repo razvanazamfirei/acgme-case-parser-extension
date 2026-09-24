@@ -144,10 +144,10 @@ describe("Excel.mapColumns", () => {
 // ---------------------------------------------------------------------------
 
 describe("Excel.readMeta", () => {
-  it("returns caselog defaults when no _meta sheet exists", () => {
+  it("leaves format detection to the headers when no metadata sheet exists", () => {
     const workbook = { Sheets: {}, SheetNames: [] };
     const meta = Excel.readMeta(workbook);
-    expect(meta.formatType).toBe("caselog");
+    expect(meta.formatType).toBeUndefined();
     expect(meta.version).toBe("1");
   });
 
@@ -214,7 +214,7 @@ describe("Excel.readMeta", () => {
     XLSX.utils.sheet_to_json.mockReturnValueOnce([["key", "value"]]);
     const workbook = { Sheets: { _meta: {} }, SheetNames: ["_meta"] };
     const meta = Excel.readMeta(workbook);
-    expect(meta.formatType).toBe("caselog");
+    expect(meta.formatType).toBeUndefined();
     expect(meta.version).toBe("1");
   });
 
@@ -245,7 +245,7 @@ describe("Excel.readMeta", () => {
     ]);
     const workbook = { Sheets: { _meta: {} }, SheetNames: ["_meta"] };
     const meta = Excel.readMeta(workbook);
-    expect(meta.formatType).toBe("caselog");
+    expect(meta.formatType).toBeUndefined();
   });
 });
 
@@ -605,6 +605,37 @@ describe("Excel.parseStandaloneRows", () => {
 // ---------------------------------------------------------------------------
 
 describe("Excel.parseRows", () => {
+  it("detects standalone headers regardless of casing or surrounding whitespace", () => {
+    const headers = STANDALONE_HEADERS.map((h) => ` ${h.toLowerCase()} `);
+    const row = makeStandaloneRow({
+      "Case ID": "OB-001",
+      "Procedure Name": "Spinal",
+    });
+    const { cases, formatType } = Excel.parseRows([headers, row]);
+    expect(formatType).toBe("standalone");
+    expect(cases[0].anesthesia).toBe("Spinal");
+  });
+
+  it("still rejects missing required standalone columns after detection", () => {
+    const headers = STANDALONE_HEADERS.filter((h) => h !== "Case Date");
+    expect(() => Excel.parseRows([headers, []])).toThrow(
+      "Missing required columns: Case Date",
+    );
+  });
+
+  it("still requires Anesthesia Type for a regular case log", () => {
+    const headers = CASELOG_HEADERS.filter((h) => h !== "Anesthesia Type");
+    expect(() => Excel.parseRows([headers, []])).toThrow(
+      "Missing required columns: Anesthesia Type",
+    );
+  });
+
+  it("honors explicit format metadata instead of overriding it with headers", () => {
+    expect(() =>
+      Excel.parseRows([STANDALONE_HEADERS, []], { formatType: "caselog" }),
+    ).toThrow("Missing required columns: Anesthesia Type");
+  });
+
   it("routes to parseCaselogRows when formatType is caselog", () => {
     const rows = [
       CASELOG_HEADERS,

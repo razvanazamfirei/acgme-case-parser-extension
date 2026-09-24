@@ -165,16 +165,16 @@ function collectReport(rootDir, files) {
         throw new Error("File has no data rows");
       }
 
-      const { cases, mappingResult } = Excel.parseRows(rows, meta);
+      const { cases, mappingResult, formatType } = Excel.parseRows(rows, meta);
       if (cases.length === 0) {
         throw new Error("No valid cases found in file");
       }
 
-      increment(formatCounts, meta.formatType || "unknown");
+      increment(formatCounts, formatType);
       increment(sheetLayoutCounts, workbook.SheetNames.join(" | "));
       increment(
         headerLayoutCounts,
-        `${meta.formatType} | ${rows[0].map((h) => String(h || "").trim()).join(" | ")}`,
+        `${formatType} | ${rows[0].map((h) => String(h || "").trim()).join(" | ")}`,
       );
 
       const metadataSheetName =
@@ -183,10 +183,10 @@ function collectReport(rootDir, files) {
         "(none)";
       increment(metadataSheetCounts, metadataSheetName);
 
-      if (!filesByFormat.has(meta.formatType)) {
-        filesByFormat.set(meta.formatType, []);
+      if (!filesByFormat.has(formatType)) {
+        filesByFormat.set(formatType, []);
       }
-      const formatFiles = filesByFormat.get(meta.formatType);
+      const formatFiles = filesByFormat.get(formatType);
       if (formatFiles.length < 5) {
         formatFiles.push(relativePath);
       }
@@ -196,7 +196,7 @@ function collectReport(rootDir, files) {
           cases.find((entry) => entry.comments?.includes("Block:")) || cases[0];
         sampleCases.push({
           file: relativePath,
-          formatType: meta.formatType,
+          formatType,
           caseCount: cases.length,
           sheets: workbook.SheetNames,
           sampleCase: {

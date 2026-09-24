@@ -42,7 +42,7 @@
     "release:publish": "bun run release:prepare && bun run release:tag"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.13",
+    "@biomejs/biome": "^2.5.14",
     "@crxjs/vite-plugin": "^2.7.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@vitest/coverage-v8": "^5.0.1",

@@ -14,6 +14,9 @@
 
 ## Upload fails due missing columns
 
+- Separate OB, block, and procedure exports use `Procedure Name` instead of
+  `Anesthesia Type`. Update or rebuild and reload the extension if these files
+  are rejected for a missing `Anesthesia Type` column.
 - Verify exact header names for required fields.
 - Remove extra rows above header row.
 - Re-export source spreadsheet and retry.

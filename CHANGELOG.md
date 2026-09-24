@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Fixed
+
+- Detect standalone OB, block, and procedure exports from their headers when
+  format metadata is absent, avoiding a false missing `Anesthesia Type` error
+  for CSVs and copied worksheets.
+- Map standalone `PA catheter` procedures to `Pulmonary Artery Catheter`.
+
 ### Changed
 
 - Popup footer version is now derived from `chrome.runtime.getManifest().version`
