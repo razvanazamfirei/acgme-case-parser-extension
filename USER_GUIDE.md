@@ -31,7 +31,7 @@ fill the ACGME Case Entry form on:
 - Access to ACGME Case Entry
 - Spreadsheet file in `.xlsx`, `.xls`, or `.csv` format with required columns
 
-Required spreadsheet columns:
+Required columns for the main case log:
 
 - `Case ID`
 - `Case Date`
@@ -47,6 +47,12 @@ Optional columns:
 - `Airway Management`
 - `Specialized Vascular Access`
 - `Specialized Monitoring Techniques`
+
+Separate OB, block, and procedure files use `Procedure Name` instead of
+`Anesthesia Type`. For these files, `Age` and `Primary Block` are optional;
+the other required columns above still apply. The extension detects this layout
+from the headers when format metadata is absent, including CSV uploads. You do
+not need to add an `Anesthesia Type` column to a standalone export.
 
 ## 4. Installation
 

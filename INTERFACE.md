@@ -28,18 +28,20 @@ is ignored. Subsequent rows contain key-value pairs in columns A and B:
 
 | Key | Values | Default |
 | ------------- | ----------------------- | --------- |
-| `format_type` | `caselog`, `standalone` | `caselog` |
+| `format_type` | `caselog`, `standalone` | Detected from headers |
 | `version` | string | `1` |
 
 Metadata keys are trimmed and case-normalized before lookup, and non-alphanumeric
 separators are normalized to underscores. This means the parser treats
-`format_type`, `format type`, `Format Type`, and `formatType` as the same key
+`format_type`, `format type`, and `Format Type` as the same key
 (`format_type`), and likewise accepts `version` and `Version` for `version`.
 
 The `format_type` value is trimmed and case-normalized before use, so values
-like ` Caselog ` and `Standalone` are accepted. If no metadata sheet is present,
-`format_type` defaults to `caselog` and `version` defaults to `1` (backwards
-compatible with files that predate this feature).
+like ` Caselog ` and `Standalone` are accepted. If `format_type` is missing or
+blank (including CSV files and workbooks without metadata), headers determine
+the format: `Procedure Name` without `Anesthesia Type` selects `standalone`;
+otherwise the parser uses `caselog`. Explicit format metadata takes precedence.
+The `version` defaults to `1`.
 
 ### Caselog Format (`format_type: caselog`)
 
@@ -68,8 +70,8 @@ Behavior:
 
 ### Standalone Procedure Format (`format_type: standalone`)
 
-Used for single-procedure records such as nerve blocks uploaded separately from
-the main case log.
+Used for OB, nerve block, and other procedure records uploaded separately from
+the main case log. These files use `Procedure Name` instead of `Anesthesia Type`.
 
 Required columns:
 
@@ -108,6 +110,7 @@ Behavior:
 | `Intubation routine` | `GA` | `Oral ETT` | |
 | `LMA` | `GA` | `LMA` | |
 | `Arterial line` | | | `Arterial Catheter` |
+| `PA catheter` | | | `Pulmonary Artery Catheter` |
 | `Epidural Blood Patch` | `Epidural` | | |
 | `Epidural` | `Epidural` | | |
 | `CSE` | `CSE` | | |

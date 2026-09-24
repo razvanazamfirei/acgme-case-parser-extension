@@ -17,6 +17,7 @@ const STANDALONE_PROCEDURE_MAP = {
   "Intubation routine": { anesthesia: "GA", airway: "Oral ETT" },
   LMA: { anesthesia: "GA", airway: "LMA" },
   "Arterial line": { vascularAccess: "Arterial Catheter" },
+  "PA catheter": { vascularAccess: "Pulmonary Artery Catheter" },
   "Epidural Blood Patch": { anesthesia: "Epidural" },
   Epidural: { anesthesia: "Epidural" },
   CSE: { anesthesia: "CSE" },
@@ -75,7 +76,7 @@ export const Excel = {
       workbook.SheetNames.find((name) => this.isMetadataSheetName(name));
     const metaSheet = metaSheetName ? workbook.Sheets[metaSheetName] : null;
     if (!metaSheet) {
-      return { version: "1", formatType: "caselog" };
+      return { version: "1", formatType: undefined };
     }
 
     const rows = XLSX.utils.sheet_to_json(metaSheet, { header: 1 });
@@ -92,7 +93,7 @@ export const Excel = {
 
     return {
       version: meta.version || "1",
-      formatType: (meta.format_type || "caselog").trim().toLowerCase(),
+      formatType: meta.format_type?.trim().toLowerCase() || undefined,
     };
   },
 
@@ -128,12 +129,24 @@ export const Excel = {
   },
 
   parseRows(rows, meta = {}) {
-    const { formatType = "caselog" } = meta;
+    // CSVs and copied worksheets may lose the workbook's format metadata.
+    const headers = rows[0].map((h) =>
+      String(h || "")
+        .trim()
+        .toLowerCase(),
+    );
+    const formatType =
+      meta.formatType ||
+      (headers.includes("procedure name") &&
+      !headers.includes("anesthesia type")
+        ? "standalone"
+        : "caselog");
 
-    if (formatType === "standalone") {
-      return this.parseStandaloneRows(rows);
-    }
-    return this.parseCaselogRows(rows);
+    const result =
+      formatType === "standalone"
+        ? this.parseStandaloneRows(rows)
+        : this.parseCaselogRows(rows);
+    return { ...result, formatType };
   },
 
   parseCaselogRows(rows) {
