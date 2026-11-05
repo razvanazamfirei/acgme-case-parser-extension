@@ -29,6 +29,20 @@ export const DOM = {
   pendingCount: "pendingCount",
   submittedCount: "submittedCount",
   skippedCount: "skippedCount",
+  reviewCount: "reviewCount",
+  reviewCasesBtn: "reviewCasesBtn",
+  recoveryPanel: "recoveryPanel",
+  recoveryMessage: "recoveryMessage",
+  recheckBtn: "recheckBtn",
+  openAcgmeBtn: "openAcgmeBtn",
+  showAcgmeBtn: "showAcgmeBtn",
+  markManualBtn: "markManualBtn",
+  resetStatusBtn: "resetStatusBtn",
+  nextPendingBtn: "nextPendingBtn",
+  markSavedBtn: "markSavedBtn",
+  returnPendingBtn: "returnPendingBtn",
+  cancelOperationBtn: "cancelOperationBtn",
+  retrySaveBtn: "retrySaveBtn",
 
   // Form fields
   caseId: "caseId",
@@ -116,6 +130,7 @@ export const STORAGE_KEYS = {
   cases: "acgme_cases",
   currentIndex: "acgme_currentIndex",
   caseStatuses: "acgme_caseStatuses",
+  caseAttempts: "acgme_caseAttempts",
   settings: "acgme_settings",
 };
 
@@ -123,6 +138,14 @@ export const STATUS_TYPES = {
   pending: "pending",
   submitted: "submitted",
   skipped: "skipped",
+  review: "review",
 };
 
 export const ACGME_URL_PATTERN = "apps.acgme.org/ads/CaseLogs/CaseEntry";
+
+export const STATUS_LABELS = {
+  pending: "Pending",
+  submitted: "Submitted",
+  skipped: "Skipped",
+  review: "Needs review",
+};

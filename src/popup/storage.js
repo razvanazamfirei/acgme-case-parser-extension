@@ -4,6 +4,7 @@
 
 import { STORAGE_KEYS } from "./constants.js";
 import { State } from "./state.js";
+import { UI } from "./ui.js";
 
 export const Storage = {
   async loadState() {
@@ -12,12 +13,14 @@ export const Storage = {
         STORAGE_KEYS.cases,
         STORAGE_KEYS.currentIndex,
         STORAGE_KEYS.caseStatuses,
+        STORAGE_KEYS.caseAttempts,
       ]);
 
       if (result[STORAGE_KEYS.cases]?.length > 0) {
         State.cases = result[STORAGE_KEYS.cases];
         State.currentIndex = result[STORAGE_KEYS.currentIndex] || 0;
         State.caseStatuses = result[STORAGE_KEYS.caseStatuses] || {};
+        State.caseAttempts = result[STORAGE_KEYS.caseAttempts] || {};
 
         if (State.currentIndex >= State.cases.length) {
           State.currentIndex = 0;
@@ -38,9 +41,14 @@ export const Storage = {
         [STORAGE_KEYS.cases]: State.cases,
         [STORAGE_KEYS.currentIndex]: State.currentIndex,
         [STORAGE_KEYS.caseStatuses]: State.caseStatuses,
+        [STORAGE_KEYS.caseAttempts]: State.caseAttempts,
       });
+      UI.setStorageError(false);
+      return true;
     } catch (error) {
+      UI.setStorageError(true);
       console.error("Error saving state:", error);
+      return false;
     }
   },
 
@@ -50,10 +58,12 @@ export const Storage = {
         STORAGE_KEYS.cases,
         STORAGE_KEYS.currentIndex,
         STORAGE_KEYS.caseStatuses,
+        STORAGE_KEYS.caseAttempts,
       ]);
       State.reset();
     } catch (error) {
       console.error("Error clearing state:", error);
+      throw error;
     }
   },
 
@@ -73,8 +83,8 @@ export const Storage = {
 
   async saveSettings(settings) {
     try {
-      State.settings = settings;
       await chrome.storage.sync.set({ [STORAGE_KEYS.settings]: settings });
+      State.settings = settings;
     } catch (error) {
       console.error("Error saving settings:", error);
       throw error;

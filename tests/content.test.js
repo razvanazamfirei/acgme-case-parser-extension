@@ -36,7 +36,9 @@ const registeredListener =
 // ---------------------------------------------------------------------------
 
 function buildFormDOM() {
+  history.replaceState({}, "", "/ads/CaseLogs/CaseEntry/New");
   document.body.innerHTML = `
+    <form method="post" action="/ads/CaseLogs/CaseEntry/Insert">
     <div id="case-id-container">
       <label class="form-label">Case ID Label
         <div><!-- label wrapper --></div>
@@ -151,7 +153,11 @@ function buildFormDOM() {
     <!-- Errors -->
     <div id="clienterrors"></div>
     <button type="submit" id="submitButton">Submit</button>
+    </form>
   `;
+  document
+    .querySelector("form")
+    .addEventListener("submit", (event) => event.preventDefault());
 }
 
 function checked(id) {
@@ -359,6 +365,17 @@ describe("findAttendingId", () => {
         <option value="103">BROWN, ALICE B</option>
         <option value="104">LEE, DAVID CHARLES</option>
       </select>`;
+  });
+
+  it.each(["SMITH, JANE", "SMITH, JAMES"])(
+    "rejects a different full first name: %s",
+    (name) => {
+      expect(findAttendingId(name)).toBeNull();
+    },
+  );
+
+  it("rejects conflicting full middle names", () => {
+    expect(findAttendingId("LEE, DAVID CHRISTOPHER")).toBeNull();
   });
 
   it("returns null when Attendings select is missing", () => {
@@ -576,8 +593,6 @@ describe("fillCase", () => {
     procedureCategory: "Cardiac with CPB",
     vascularAccess: "",
     monitoring: "",
-    neuraxialBlockadeSite: "",
-    peripheralNerveBlockadeSite: "",
     institution: "",
     defaultAttending: "",
     cardiacAutoFill: false,
@@ -602,6 +617,85 @@ describe("fillCase", () => {
     const result = fillCase({ ...baseCase });
     expect(result.success).toBe(true);
   });
+
+  it("clears prior comments, radios, dates, age and case identifiers", () => {
+    fillCase({
+      ...baseCase,
+      difficultAirway: "Unanticipated",
+      lifeThreateningPathology: "Trauma",
+    });
+    fillCase({
+      ...baseCase,
+      caseId: "",
+      date: "",
+      ageCategory: "",
+      comments: "",
+      difficultAirway: "",
+      lifeThreateningPathology: "",
+    });
+    expect(document.getElementById("Comments").value).toBe("");
+    expect(document.getElementById(getFieldId("caseId")).value).toBe("");
+    expect(document.getElementById(getFieldId("date")).value).toBe("");
+    expect(document.getElementById("PatientTypes").value).toBe("");
+    expect(checked("CaseTypes_149")).toBe(false);
+    expect(checked("CaseTypes_134")).toBe(false);
+  });
+
+  it("fails when target controls are missing even with warnings disabled", () => {
+    document.body.innerHTML = "";
+    const result = fillCase({ ...baseCase, showWarnings: false });
+    expect(result.success).toBe(false);
+    expect(result.errors[0]).toContain("Open a new ACGME case entry form");
+  });
+
+  it("fails when a requested select option or procedure is absent", () => {
+    document.getElementById("156632").remove();
+    const result = fillCase({ ...baseCase, institution: "not-an-option" });
+    expect(result.success).toBe(false);
+    expect(result.errors).toContain(
+      "Could not fill required field: institution",
+    );
+    expect(result.errors).toContain("Could not fill required field: asa");
+  });
+
+  it.each([
+    ["airway", "Mask", "156650"],
+    ["airway", "Video Laryngoscope", "1256335"],
+    ["vascularAccess", "PA Catheter", "156700"],
+    ["monitoring", "TEE", "156707"],
+    ["difficultAirway", "Anticipated", "CaseTypes_148"],
+    ["lifeThreateningPathology", "Trauma", "CaseTypes_134"],
+    ["neuraxialBlockadeSite", "Lumbar", "n102"],
+    ["peripheralNerveBlockadeSite", "Femoral", "156735"],
+  ])("fails if the selected %s cannot be filled", (field, value, id) => {
+    document.getElementById(id).disabled = true;
+    const result = fillCase({
+      ...baseCase,
+      [field]: value,
+      showWarnings: false,
+    });
+    expect(result.success).toBe(false);
+    expect(result.errors.length).toBeGreaterThan(0);
+  });
+
+  it("fails if a previous checked procedure cannot be cleared", () => {
+    const stale = document.getElementById("156655");
+    stale.checked = true;
+    stale.disabled = true;
+    expect(fillCase(baseCase).success).toBe(false);
+  });
+
+  it.each(["", "New comments"])(
+    "fails if read-only comments retain stale text (%s)",
+    (comments) => {
+      const field = document.getElementById("Comments");
+      field.value = "Previous case";
+      field.readOnly = true;
+      const result = fillCase({ ...baseCase, comments });
+      expect(result.success).toBe(false);
+      expect(field.value).toBe("Previous case");
+    },
+  );
 
   it("fills attending and records it in filled", () => {
     const result = fillCase({ ...baseCase });
@@ -657,7 +751,7 @@ describe("fillCase", () => {
       .mockImplementation((id) => {
         if (id === "Attendings") {
           attendingLookupCount += 1;
-          if (attendingLookupCount === 1) {
+          if (attendingLookupCount === 2) {
             return null;
           }
         }
@@ -980,14 +1074,14 @@ describe("fillCase", () => {
     expect(result.warnings).toHaveLength(0);
   });
 
-  it("handles unknown anesthesia type gracefully", () => {
+  it("rejects an unmapped anesthesia type", () => {
     const result = fillCase({ ...baseCase, anesthesia: "UNKNOWN_TYPE" });
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
   });
 
-  it("handles unknown ASA gracefully", () => {
+  it("rejects an unmapped ASA", () => {
     const result = fillCase({ ...baseCase, asa: "9" });
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
   });
 
   it("handles Cardiac without CPB auto-fill", () => {
@@ -1191,42 +1285,62 @@ describe("submitCase", () => {
     vi.useRealTimers();
   });
 
-  it("clicks the submit button and returns success when no errors", async () => {
+  it("reports an unconfirmed attempt after clicking without validation errors", async () => {
     const btn = document.getElementById("submitButton");
     const clickSpy = vi.spyOn(btn, "click");
     const promise = submitCase();
     await vi.runAllTimersAsync();
     const result = await promise;
     expect(clickSpy).toHaveBeenCalled();
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
+    expect(result.uncertain).toBe(true);
+  });
+
+  it("does not click a disabled submit button", async () => {
+    const button = document.getElementById("submitButton");
+    button.disabled = true;
+    const click = vi.spyOn(button, "click");
+    expect((await submitCase()).success).toBe(false);
+    expect(click).not.toHaveBeenCalled();
+  });
+
+  it("rejects a form that changed after filling", async () => {
+    const click = vi.spyOn(document.getElementById("submitButton"), "click");
+    expect(
+      (await submitCase({ caseId: "OTHER", date: "1/1/2026" })).success,
+    ).toBe(false);
+    expect(click).not.toHaveBeenCalled();
   });
 
   it("returns error when no submit button found", async () => {
-    document.body.innerHTML = "";
+    document.getElementById("submitButton").remove();
     const result = await submitCase();
     expect(result.success).toBe(false);
     expect(result.errors[0]).toContain("Submit button not found");
   });
 
-  it("returns validation errors when present after submit", async () => {
-    document.body.innerHTML = `
-      <button type="submit" id="submitButton">Submit</button>
-      <span class="field-validation-error">Date is required</span>`;
+  it("keeps a clicked submission uncertain when stale validation errors remain", async () => {
+    document.getElementById("clienterrors").innerHTML =
+      '<span class="field-validation-error">Date is required</span>';
     // We need to simulate visible offsetParent — attach a second element
     // whose offsetParent is not null for happy-dom
     const err = document.querySelector(".field-validation-error");
     err.textContent = "Date is required";
+    Object.defineProperty(err, "offsetParent", { value: document.body });
 
     const promise = submitCase();
     await vi.runAllTimersAsync();
     const result = await promise;
-    // Result depends on whether happy-dom sees the error as visible;
-    // we just ensure it doesn't throw
-    expect(typeof result.success).toBe("boolean");
+    expect(result).toEqual({
+      success: false,
+      attempted: true,
+      uncertain: true,
+      errors: ["Date is required"],
+    });
   });
 
   it("finds button via fallback selectors", async () => {
-    document.body.innerHTML = `<button type="submit">Submit</button>`;
+    document.getElementById("submitButton").removeAttribute("id");
     const btn = document.querySelector('button[type="submit"]');
     const clickSpy = vi.spyOn(btn, "click");
     const promise = submitCase();
@@ -1278,7 +1392,7 @@ describe("chrome.runtime.onMessage listener", () => {
     expect(keepOpen).toBe(true);
     expect(sendResponse).toHaveBeenCalledWith({
       success: true,
-      result: expect.objectContaining({ success: true }),
+      result: expect.objectContaining({ success: false }),
     });
   });
 
@@ -1349,5 +1463,97 @@ describe("chrome.runtime.onMessage listener", () => {
     expect(sendResponse).toHaveBeenCalledWith(
       expect.objectContaining({ success: false }),
     );
+  });
+});
+
+describe("page readiness", () => {
+  it("refuses an edit URL even if its form still has a creation action", async () => {
+    buildFormDOM();
+    history.replaceState({}, "", "/ads/CaseLogs/CaseEntry/Edit/123");
+    document.getElementById("caseIdInput").value = "EXISTING";
+    expect(fillCase({ caseId: "REPLACEMENT" }).success).toBe(false);
+    expect(document.getElementById("caseIdInput").value).toBe("EXISTING");
+    expect((await submitCase()).attempted).toBe(false);
+  });
+
+  it.each([
+    ["/ads/CaseLogs/CaseEntry/Update/123", "post"],
+    ["https://example.org/ads/CaseLogs/CaseEntry/Insert", "post"],
+    ["/ads/CaseLogs/CaseEntry/Insert", "get"],
+  ])(
+    "does not modify or submit a non-creation form (%s, %s)",
+    async (action, method) => {
+      buildFormDOM();
+      const form = document.querySelector("form");
+      form.setAttribute("action", action);
+      form.method = method;
+      document.getElementById("caseIdInput").value = "EXISTING";
+      document.getElementById("Comments").value = "Keep existing data";
+      document.getElementById("156632").checked = true;
+      const callback = vi.fn();
+      handleMessage({ action: "getPageState" }, {}, callback);
+      expect(callback).toHaveBeenCalledWith(
+        expect.objectContaining({ ready: false, blocked: true }),
+      );
+      handleMessage(
+        { action: "fillCase", data: { caseId: "REPLACEMENT" } },
+        {},
+        callback,
+      );
+      expect(callback).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          result: expect.objectContaining({ success: false }),
+        }),
+      );
+      const click = vi.spyOn(document.getElementById("submitButton"), "click");
+      expect(await submitCase()).toMatchObject({
+        success: false,
+        attempted: false,
+      });
+      expect(click).not.toHaveBeenCalled();
+      expect(document.getElementById("caseIdInput").value).toBe("EXISTING");
+      expect(document.getElementById("Comments").value).toBe(
+        "Keep existing data",
+      );
+      expect(checked("156632")).toBe(true);
+    },
+  );
+
+  it("checks the form again when it changes after a readiness response", async () => {
+    buildFormDOM();
+    const callback = vi.fn();
+    handleMessage({ action: "getPageState" }, {}, callback);
+    expect(callback).toHaveBeenLastCalledWith({ success: true, ready: true });
+    document.querySelector("form").action =
+      "/ads/CaseLogs/CaseEntry/Update/123";
+    const result = fillCase({ caseId: "REPLACEMENT" });
+    expect(result.success).toBe(false);
+    expect(document.getElementById("caseIdInput").value).toBe("");
+    expect((await submitCase()).attempted).toBe(false);
+  });
+
+  it("accepts a creation form shown again after server validation", () => {
+    buildFormDOM();
+    history.replaceState({}, "", "/ads/CaseLogs/CaseEntry/Insert");
+    const callback = vi.fn();
+    handleMessage({ action: "getPageState" }, {}, callback);
+    expect(callback).toHaveBeenLastCalledWith({ success: true, ready: true });
+    history.replaceState({}, "", "/");
+  });
+
+  it("waits for an enabled entry form and submit button without changing values", () => {
+    buildFormDOM();
+    const callback = vi.fn();
+    const caseId = document.getElementById("caseIdInput");
+    caseId.value = "UNCHANGED";
+    handleMessage({ action: "getPageState" }, {}, callback);
+    expect(callback).toHaveBeenLastCalledWith({ success: true, ready: true });
+    document.getElementById("submitButton").disabled = true;
+    handleMessage({ action: "getPageState" }, {}, callback);
+    expect(callback).toHaveBeenLastCalledWith({ success: true, ready: false });
+    expect(caseId.value).toBe("UNCHANGED");
+    document.body.innerHTML = "";
+    handleMessage({ action: "getPageState" }, {}, callback);
+    expect(callback).toHaveBeenLastCalledWith({ success: true, ready: false });
   });
 });

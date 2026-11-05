@@ -77,12 +77,13 @@ describe("Storage", () => {
         [STORAGE_KEYS.cases]: State.cases,
         [STORAGE_KEYS.currentIndex]: 0,
         [STORAGE_KEYS.caseStatuses]: { 0: "pending" },
+        [STORAGE_KEYS.caseAttempts]: {},
       });
     });
 
-    it("swallows errors silently", async () => {
+    it("returns failure when progress cannot be saved", async () => {
       chrome.storage.local.set.mockRejectedValue(new Error("write error"));
-      await expect(Storage.saveState()).resolves.toBeUndefined();
+      await expect(Storage.saveState()).resolves.toBe(false);
     });
   });
 
@@ -101,14 +102,15 @@ describe("Storage", () => {
         STORAGE_KEYS.cases,
         STORAGE_KEYS.currentIndex,
         STORAGE_KEYS.caseStatuses,
+        STORAGE_KEYS.caseAttempts,
       ]);
       expect(State.cases).toEqual([]);
       expect(State.currentIndex).toBe(0);
     });
 
-    it("swallows errors silently", async () => {
+    it("reports failure instead of pretending the session was cleared", async () => {
       chrome.storage.local.remove.mockRejectedValue(new Error("remove error"));
-      await expect(Storage.clearState()).resolves.toBeUndefined();
+      await expect(Storage.clearState()).rejects.toThrow("remove error");
     });
   });
 
@@ -165,10 +167,12 @@ describe("Storage", () => {
     });
 
     it("throws when sync storage write fails", async () => {
+      const original = State.settings;
       chrome.storage.sync.set.mockRejectedValue(new Error("sync write error"));
       await expect(Storage.saveSettings({})).rejects.toThrow(
         "sync write error",
       );
+      expect(State.settings).toBe(original);
     });
   });
 });

@@ -1,7 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ACGMEForm } from "../src/popup/acgme.js";
 import { ACGME_URL_PATTERN } from "../src/popup/constants.js";
 import { State } from "../src/popup/state.js";
+import { Storage } from "../src/popup/storage.js";
+import { Target } from "../src/popup/target.js";
 
 vi.mock("../src/popup/navigation.js", () => ({
   Navigation: { goToNextPending: vi.fn(), update: vi.fn() },
@@ -32,6 +34,7 @@ const ACGME_URL = `https://${ACGME_URL_PATTERN}/New`;
 describe("ACGMEForm", () => {
   beforeEach(() => {
     buildACGMEDOM();
+    Target.tabId = null;
     State.reset();
     State.setCases([{ caseId: "CASE-001" }]);
     State.settings = {
@@ -43,6 +46,13 @@ describe("ACGMEForm", () => {
       showWarnings: false,
     };
     vi.resetAllMocks();
+    chrome.tabs.get.mockResolvedValue({
+      id: 42,
+      url: ACGME_URL,
+      status: "complete",
+    });
+    Storage.saveState.mockResolvedValue(true);
+    ACGMEForm.busy = false;
   });
 
   // -------------------------------------------------------------------------
@@ -76,7 +86,7 @@ describe("ACGMEForm", () => {
       chrome.tabs.query.mockResolvedValue([]);
       const result = await ACGMEForm.fill();
       expect(result.success).toBe(false);
-      expect(result.errors[0]).toContain("active browser tab");
+      expect(result.errors[0]).toContain("ACGME Case Entry tab");
     });
 
     it("returns error when tab id is missing", async () => {
@@ -106,6 +116,7 @@ describe("ACGMEForm", () => {
     it("returns error when content script is not loaded (lastError)", async () => {
       mockTabOnAcgme();
       chrome.tabs.sendMessage.mockImplementation((_id, _msg, cb) => {
+        if (_msg.action === "getPageState") return cb({ ready: true });
         Object.defineProperty(chrome.runtime, "lastError", {
           value: { message: "Could not establish connection" },
           configurable: true,
@@ -118,12 +129,14 @@ describe("ACGMEForm", () => {
       });
       const result = await ACGMEForm.fill();
       expect(result.success).toBe(false);
-      expect(result.errors[0]).toContain("Content script not loaded");
+      expect(result.errors[0]).toContain("interrupted");
     });
 
     it("returns error when content script returns no response", async () => {
       mockTabOnAcgme();
-      chrome.tabs.sendMessage.mockImplementation((_id, _msg, cb) => cb(null));
+      chrome.tabs.sendMessage.mockImplementation((_id, msg, cb) =>
+        cb(msg.action === "getPageState" ? { ready: true } : null),
+      );
       const result = await ACGMEForm.fill();
       expect(result.success).toBe(false);
     });
@@ -131,23 +144,68 @@ describe("ACGMEForm", () => {
     it("returns fill result when content script returns success", async () => {
       mockTabOnAcgme();
       chrome.tabs.sendMessage.mockImplementation((_id, _msg, cb) =>
-        cb({
-          success: true,
-          result: { success: true, filled: [], warnings: [], errors: [] },
-        }),
+        cb(
+          _msg.action === "getPageState"
+            ? { ready: true }
+            : {
+                success: true,
+                result: { success: true, filled: [], warnings: [], errors: [] },
+              },
+        ),
       );
       const result = await ACGMEForm.fill(false);
       expect(result.success).toBe(true);
       expect(result.submitted).toBe(false);
     });
 
+    it("waits for a previous save navigation before filling the next case", async () => {
+      vi.useFakeTimers();
+      try {
+        mockTabOnAcgme();
+        let loading = true;
+        chrome.tabs.get.mockImplementation(async () => ({
+          id: 42,
+          url: ACGME_URL,
+          status: loading ? "loading" : "complete",
+        }));
+        chrome.tabs.sendMessage.mockImplementation((_id, message, callback) =>
+          callback(
+            message.action === "getPageState"
+              ? { ready: true }
+              : { success: true, result: { success: true } },
+          ),
+        );
+        const pending = ACGMEForm.fill(false);
+        await vi.advanceTimersByTimeAsync(500);
+        expect(
+          chrome.tabs.sendMessage.mock.calls.some(
+            ([, message]) => message.action === "fillCase",
+          ),
+        ).toBe(false);
+        loading = false;
+        await vi.runAllTimersAsync();
+        expect((await pending).success).toBe(true);
+        expect(
+          chrome.tabs.sendMessage.mock.calls.filter(
+            ([, message]) => message.action === "fillCase",
+          ),
+        ).toHaveLength(1);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it("shows info status after successful fill (no submit)", async () => {
       mockTabOnAcgme();
       chrome.tabs.sendMessage.mockImplementation((_id, _msg, cb) =>
-        cb({
-          success: true,
-          result: { success: true, filled: [], warnings: [], errors: [] },
-        }),
+        cb(
+          _msg.action === "getPageState"
+            ? { ready: true }
+            : {
+                success: true,
+                result: { success: true, filled: [], warnings: [], errors: [] },
+              },
+        ),
       );
       await ACGMEForm.fill(false);
       expect(document.getElementById("statusMessage").textContent).toContain(
@@ -158,15 +216,19 @@ describe("ACGMEForm", () => {
     it("shows warnings in status when fill has warnings", async () => {
       mockTabOnAcgme();
       chrome.tabs.sendMessage.mockImplementation((_id, _msg, cb) =>
-        cb({
-          success: true,
-          result: {
-            success: true,
-            filled: [],
-            warnings: ["Used default attending"],
-            errors: [],
-          },
-        }),
+        cb(
+          _msg.action === "getPageState"
+            ? { ready: true }
+            : {
+                success: true,
+                result: {
+                  success: true,
+                  filled: [],
+                  warnings: ["Used default attending"],
+                  errors: [],
+                },
+              },
+        ),
       );
       State.settings.showWarnings = true;
       await ACGMEForm.fill(false);
@@ -180,126 +242,226 @@ describe("ACGMEForm", () => {
   // -------------------------------------------------------------------------
 
   describe("fill() — with submit", () => {
-    function mockFillSuccess() {
+    const savedCase = {
+      caseId: "CASE-001",
+      date: "01/15/2024",
+      key: "new-server-record",
+    };
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    function transport({
+      baseline = [],
+      recent = [savedCase],
+      submit = { success: false, uncertain: true },
+      onSubmit = () => {},
+      warnings = [],
+    } = {}) {
+      let reads = 0;
       chrome.tabs.query.mockResolvedValue([{ id: 42, url: ACGME_URL }]);
-      chrome.tabs.sendMessage.mockImplementationOnce((_id, _msg, cb) =>
-        cb({
-          success: true,
-          result: { success: true, filled: [], warnings: [], errors: [] },
-        }),
-      );
+      chrome.tabs.sendMessage.mockImplementation((_id, message, callback) => {
+        if (message.action === "getPageState") callback({ ready: true });
+        if (message.action === "fillCase")
+          callback({
+            success: true,
+            result: { success: true, warnings, errors: [] },
+          });
+        if (message.action === "getRecentCases")
+          callback({ success: true, cases: reads++ === 0 ? baseline : recent });
+        if (message.action === "submitCase") {
+          onSubmit();
+          callback(submit);
+        }
+      });
+    }
+    async function finish(promise) {
+      await vi.runAllTimersAsync();
+      return promise;
     }
 
-    it("treats 'message channel closed' as submit success", async () => {
-      mockFillSuccess();
-      chrome.tabs.sendMessage.mockImplementationOnce((_id, _msg, cb) => {
-        Object.defineProperty(chrome.runtime, "lastError", {
-          value: {
-            message:
-              "The message channel closed before a response was received",
-          },
-          configurable: true,
-        });
-        cb(undefined);
-        Object.defineProperty(chrome.runtime, "lastError", {
-          value: null,
-          configurable: true,
-        });
-      });
-      const result = await ACGMEForm.fill(true);
+    it("marks a case submitted only after a new matching server row appears", async () => {
+      transport();
+      const result = await finish(ACGMEForm.fill(true));
       expect(result.submitted).toBe(true);
-      expect(result.success).toBe(true);
+      expect(State.getCaseStatus(0)).toBe("submitted");
     });
 
-    it("treats 'message port closed' as submit success", async () => {
-      mockFillSuccess();
-      chrome.tabs.sendMessage.mockImplementationOnce((_id, _msg, cb) => {
-        Object.defineProperty(chrome.runtime, "lastError", {
-          value: {
-            message: "The message port closed before a response was received",
-          },
-          configurable: true,
+    it.each(["channel", "port"])(
+      "does not treat a closed message %s as proof of a save",
+      async (kind) => {
+        transport({
+          recent: [],
+          onSubmit: () =>
+            Object.defineProperty(chrome.runtime, "lastError", {
+              value: {
+                message: `The message ${kind} closed before a response was received`,
+              },
+              configurable: true,
+            }),
         });
-        cb(undefined);
+        const promise = ACGMEForm.fill(true);
+        await vi.advanceTimersByTimeAsync(1);
         Object.defineProperty(chrome.runtime, "lastError", {
           value: null,
           configurable: true,
         });
-      });
-      const result = await ACGMEForm.fill(true);
-      expect(result.submitted).toBe(true);
+        const result = await finish(promise);
+        expect(result.submitted).toBe(false);
+        expect(result.uncertain).toBe(true);
+        expect(State.getCaseStatus(0)).toBe("review");
+      },
+    );
+
+    it("does not mistake an existing row for a new save", async () => {
+      transport({ baseline: [savedCase] });
+      const result = await finish(ACGMEForm.fill(true));
+      expect(result.submitted).toBe(false);
+      expect(result.uncertain).toBe(true);
     });
 
-    it("treats other lastError on submit as failure", async () => {
-      mockFillSuccess();
-      chrome.tabs.sendMessage.mockImplementationOnce((_id, _msg, cb) => {
-        Object.defineProperty(chrome.runtime, "lastError", {
-          value: { message: "Extension context invalidated" },
-          configurable: true,
-        });
-        cb(undefined);
-        Object.defineProperty(chrome.runtime, "lastError", {
-          value: null,
-          configurable: true,
-        });
-      });
-      const result = await ACGMEForm.fill(true);
+    it.each([
+      { ...savedCase, caseId: "OTHER" },
+      { ...savedCase, date: "1/16/2024" },
+    ])("requires both the case ID and date to match", async (other) => {
+      transport({ recent: [other] });
+      const result = await finish(ACGMEForm.fill(true));
       expect(result.submitted).toBe(false);
     });
 
-    it("marks case as submitted and shows success status", async () => {
-      mockFillSuccess();
-      chrome.tabs.sendMessage.mockImplementationOnce((_id, _msg, cb) =>
-        cb({ success: true }),
-      );
-      await ACGMEForm.fill(true);
-      expect(State.getCaseStatus(0)).toBe("submitted");
-      expect(document.getElementById("statusMessage").textContent).toContain(
-        "submitted",
-      );
+    it("does not submit without a valid baseline", async () => {
+      transport({ baseline: null });
+      const result = await finish(ACGMEForm.fill(true));
+      expect(result.submitted).toBe(false);
+      expect(
+        chrome.tabs.sendMessage.mock.calls.some(
+          ([, message]) => message.action === "submitCase",
+        ),
+      ).toBe(false);
     });
 
-    it("includes warning in submit success message when showWarnings=true", async () => {
-      chrome.tabs.query.mockResolvedValue([{ id: 42, url: ACGME_URL }]);
-      chrome.tabs.sendMessage.mockImplementationOnce((_id, _msg, cb) =>
-        cb({
-          success: true,
-          result: {
-            success: true,
-            filled: [],
-            warnings: ["Used default attending"],
-            errors: [],
-          },
-        }),
+    it("allows retry only when the content script explicitly refused to click", async () => {
+      transport({
+        submit: {
+          success: false,
+          attempted: false,
+          errors: ["Submit button is disabled."],
+        },
+      });
+      const result = await finish(ACGMEForm.fill(true));
+      expect(result.submitted).toBe(false);
+      expect(result.errors).toContain("Submit button is disabled.");
+      expect(State.getCaseStatus(0)).toBe("pending");
+      expect(State.caseAttempts[0]).toBeUndefined();
+    });
+
+    it("confirms a dispatched save even if stale validation text was reported", async () => {
+      transport({
+        submit: { success: false, errors: ["Old validation error"] },
+      });
+      const result = await finish(ACGMEForm.fill(true));
+      expect(result.submitted).toBe(true);
+      expect(State.getCaseStatus(0)).toBe("submitted");
+    });
+
+    it("does not allow a retry after a dispatched save with validation text and no confirmation", async () => {
+      transport({
+        recent: [],
+        submit: {
+          success: false,
+          attempted: true,
+          errors: ["Date is required"],
+        },
+      });
+      const result = await finish(ACGMEForm.fill(true));
+      expect(result.uncertain).toBe(true);
+      expect(result.errors).toContain("Date is required");
+      expect(State.getCaseStatus(0)).toBe("review");
+    });
+
+    it("attributes a delayed response to the original case after navigation", async () => {
+      State.setCases([{ caseId: "CASE-001" }, { caseId: "CASE-002" }]);
+      transport({
+        onSubmit: () => {
+          State.currentIndex = 1;
+        },
+      });
+      await finish(ACGMEForm.fill(true));
+      expect(State.getCaseStatus(0)).toBe("submitted");
+      expect(State.getCaseStatus(1)).toBe("pending");
+    });
+
+    it("does not apply an old response to a replacement session", async () => {
+      transport({
+        onSubmit: () => State.setCases([{ caseId: "NEW-SESSION" }]),
+      });
+      await finish(ACGMEForm.fill(true));
+      expect(State.getCaseStatus(0)).toBe("pending");
+    });
+
+    it("cancels before submission when stopped during the delay", async () => {
+      const controller = new AbortController();
+      State.settings.submitDelay = 2;
+      transport();
+      const promise = ACGMEForm.fill(true, { signal: controller.signal });
+      await vi.advanceTimersByTimeAsync(100);
+      controller.abort();
+      const result = await finish(promise);
+      expect(result.cancelled).toBe(true);
+      expect(
+        chrome.tabs.sendMessage.mock.calls.some(
+          ([, message]) => message.action === "submitCase",
+        ),
+      ).toBe(false);
+    });
+
+    it("leaves an already clicked submission reviewable after STOP", async () => {
+      const controller = new AbortController();
+      transport({ onSubmit: () => controller.abort() });
+      const result = await finish(
+        ACGMEForm.fill(true, { signal: controller.signal }),
       );
-      chrome.tabs.sendMessage.mockImplementationOnce((_id, _msg, cb) =>
-        cb({ success: true }),
-      );
+      expect(result.submitted).toBe(false);
+      expect(result.uncertain).toBe(true);
+      expect(State.getCaseStatus(0)).toBe("review");
+    });
+
+    it("rejects overlapping operations", async () => {
+      transport();
+      const first = ACGMEForm.fill(true);
+      expect((await ACGMEForm.fill(false)).success).toBe(false);
+      await finish(first);
+      expect(ACGMEForm.busy).toBe(false);
+    });
+
+    it("retains fill warnings with a confirmed submission", async () => {
+      transport({ warnings: ["Used default attending"] });
       State.settings.showWarnings = true;
-      await ACGMEForm.fill(true);
+      await finish(ACGMEForm.fill(true));
       expect(document.getElementById("statusMessage").textContent).toContain(
         "Warning",
       );
     });
 
-    it("shows submit error when submit response is failure", async () => {
-      mockFillSuccess();
-      chrome.tabs.sendMessage.mockImplementationOnce((_id, _msg, cb) =>
-        cb({ success: false, errors: ["Form validation failed"] }),
-      );
-      await ACGMEForm.fill(true);
-      expect(document.getElementById("statusMessage").textContent).toContain(
-        "Submit failed",
-      );
+    it("treats verification exceptions after a click as an uncertain save", async () => {
+      transport({
+        onSubmit: () => {
+          chrome.tabs.sendMessage.mockImplementation(() => {
+            throw new Error("Connection lost");
+          });
+        },
+      });
+      const result = await finish(ACGMEForm.fill(true));
+      expect(result.uncertain).toBe(true);
+      expect(result.submitted).toBe(false);
+      expect(State.getCaseStatus(0)).toBe("review");
     });
 
-    it("shows generic submit failed message when no errors array", async () => {
-      mockFillSuccess();
-      chrome.tabs.sendMessage.mockImplementationOnce((_id, _msg, cb) =>
-        cb({ success: false }),
-      );
-      const result = await ACGMEForm.fill(true);
-      expect(result.submitted).toBe(false);
+    it("times out an unresponsive content script", async () => {
+      chrome.tabs.query.mockResolvedValue([{ id: 42, url: ACGME_URL }]);
+      chrome.tabs.sendMessage.mockImplementation(() => {});
+      const result = await finish(ACGMEForm.fill(true));
+      expect(result.success).toBe(false);
+      expect(State.getCaseStatus(0)).toBe("pending");
     });
   });
 

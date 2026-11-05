@@ -2,7 +2,7 @@
  * Case navigation logic
  */
 
-import { DOM, STATUS_TYPES } from "./constants.js";
+import { DOM, STATUS_LABELS, STATUS_TYPES } from "./constants.js";
 import { Form } from "./form.js";
 import { State } from "./state.js";
 import { Storage } from "./storage.js";
@@ -14,24 +14,33 @@ export const Navigation = {
       return;
     }
 
+    Form.saveCurrent();
     State.currentIndex = index;
     Form.populate(State.getCurrentCase());
     this.update();
-    UI.hideStatus();
-    // Submit button is always enabled now - removed auto-disable
+    if (!UI.operationActive) UI.hideStatus();
     Storage.saveState();
   },
 
   goToNextPending() {
     const nextIndex = State.findNextPending(State.currentIndex);
     if (nextIndex === null) {
-      UI.showStatus("All cases have been processed!", "success");
+      const stats = State.getStats();
+      UI.showStatus(
+        stats.review
+          ? `${stats.review} case(s) still need review.`
+          : stats.pending
+            ? "This is the last pending case."
+            : "All cases have been processed!",
+        stats.review ? "warning" : "success",
+      );
     } else {
       this.goToCase(nextIndex);
     }
   },
 
   update() {
+    Form.updateStatusBadge();
     UI.get(DOM.currentIndex).textContent = (State.currentIndex + 1).toString();
     UI.get(DOM.totalCount).textContent = State.cases.length.toString();
     UI.get(DOM.currentIndexBottom).textContent = (
@@ -47,6 +56,7 @@ export const Navigation = {
 
     this.updateJumpDropdown();
     UI.updateStats();
+    UI.updateCaseActions();
   },
 
   updateJumpDropdown() {
@@ -57,13 +67,18 @@ export const Navigation = {
 
     for (let i = 0; i < State.cases.length; i++) {
       const status = State.getCaseStatus(i);
-      if (filterPending && status !== STATUS_TYPES.pending) {
+      if (
+        filterPending &&
+        status !== STATUS_TYPES.pending &&
+        status !== STATUS_TYPES.review &&
+        i !== State.currentIndex
+      ) {
         continue;
       }
 
       const opt = document.createElement("option");
       opt.value = i;
-      opt.textContent = `${i + 1}. ${State.cases[i].caseId} (${status})`;
+      opt.textContent = `${i + 1}. ${State.cases[i].caseId} (${STATUS_LABELS[status]})`;
       opt.selected = i === State.currentIndex;
       jumpSelect.appendChild(opt);
     }

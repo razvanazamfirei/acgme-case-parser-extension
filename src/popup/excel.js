@@ -71,12 +71,13 @@ export const Excel = {
   },
 
   readMeta(workbook) {
+    const date1904 = Boolean(workbook.Workbook?.WBProps?.date1904);
     const metaSheetName =
       workbook.SheetNames.find((name) => name === "_meta") ||
       workbook.SheetNames.find((name) => this.isMetadataSheetName(name));
     const metaSheet = metaSheetName ? workbook.Sheets[metaSheetName] : null;
     if (!metaSheet) {
-      return { version: "1", formatType: undefined };
+      return { version: "1", formatType: undefined, date1904 };
     }
 
     const rows = XLSX.utils.sheet_to_json(metaSheet, { header: 1 });
@@ -94,6 +95,7 @@ export const Excel = {
     return {
       version: meta.version || "1",
       formatType: meta.format_type?.trim().toLowerCase() || undefined,
+      date1904,
     };
   },
 
@@ -144,12 +146,12 @@ export const Excel = {
 
     const result =
       formatType === "standalone"
-        ? this.parseStandaloneRows(rows)
-        : this.parseCaselogRows(rows);
+        ? this.parseStandaloneRows(rows, meta.date1904)
+        : this.parseCaselogRows(rows, meta.date1904);
     return { ...result, formatType };
   },
 
-  parseCaselogRows(rows) {
+  parseCaselogRows(rows, date1904 = false) {
     const headers = rows[0].map((h) => String(h || "").trim());
     const mappingResult = this.mapColumns(
       headers,
@@ -186,7 +188,7 @@ export const Excel = {
 
       const caseData = {
         caseId: this.getString(row, colIndex["Case ID"]),
-        date: this.formatDate(row[colIndex["Case Date"]]),
+        date: this.formatDate(row[colIndex["Case Date"]], date1904),
         attending: this.getString(row, colIndex.Supervisor),
         ageCategory: this.getString(row, colIndex.Age),
         comments: this.getString(row, colIndex["Original Procedure"]),
@@ -213,7 +215,7 @@ export const Excel = {
     return { cases, mappingResult };
   },
 
-  parseStandaloneRows(rows) {
+  parseStandaloneRows(rows, date1904 = false) {
     const headers = rows[0].map((h) => String(h || "").trim());
     const mappingResult = this.mapColumns(
       headers,
@@ -258,7 +260,7 @@ export const Excel = {
 
       const caseData = {
         caseId: this.getString(row, colIndex["Case ID"]),
-        date: this.formatDate(row[colIndex["Case Date"]]),
+        date: this.formatDate(row[colIndex["Case Date"]], date1904),
         attending: this.getString(row, colIndex.Supervisor),
         ageCategory: this.getString(row, colIndex.Age),
         comments,
@@ -336,7 +338,7 @@ export const Excel = {
     return String(val).trim();
   },
 
-  formatDate(val) {
+  formatDate(val, date1904 = false) {
     if (!val) {
       return "";
     }
@@ -346,7 +348,9 @@ export const Excel = {
     }
 
     if (typeof val === "number") {
-      const date = new Date((val - 25569) * 86400 * 1000);
+      const date = new Date(
+        (val + (date1904 ? 1462 : 0) - 25569) * 86400 * 1000,
+      );
       return `${date.getUTCMonth() + 1}/${date.getUTCDate()}/${date.getUTCFullYear()}`;
     }
 

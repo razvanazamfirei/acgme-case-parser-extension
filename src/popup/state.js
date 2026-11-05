@@ -8,6 +8,7 @@ export const State = {
   cases: [],
   currentIndex: 0,
   caseStatuses: {},
+  caseAttempts: {},
 
   settings: {
     defaultInstitution: "",
@@ -22,11 +23,13 @@ export const State = {
     this.cases = [];
     this.currentIndex = 0;
     this.caseStatuses = {};
+    this.caseAttempts = {};
   },
 
   setCases(cases) {
     this.cases = cases;
     this.caseStatuses = {};
+    this.caseAttempts = {};
     for (let i = 0; i < cases.length; i++) {
       this.caseStatuses[i] = STATUS_TYPES.pending;
     }
@@ -46,7 +49,7 @@ export const State = {
   },
 
   getStats() {
-    const stats = { pending: 0, submitted: 0, skipped: 0 };
+    const stats = { pending: 0, submitted: 0, skipped: 0, review: 0 };
     for (let i = 0; i < this.cases.length; i++) {
       const status = this.getCaseStatus(i);
       stats[status]++;

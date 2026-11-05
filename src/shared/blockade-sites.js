@@ -62,13 +62,11 @@ const NEURAXIAL_BLOCKADE_SITE_MATCHERS = [
   { pattern: /\bcervical\b/, type: "Cervical" },
   { pattern: /\blumbar\b/, type: "Lumbar" },
   {
-    pattern:
-      /\b(?:t\s*1\s*-\s*7|t1\s*-\s*7|thoracic\s*1\s*-\s*7|thoracic\s*1\s*(?:to|-)\s*7)\b/,
+    pattern: /\b(?:t|thoracic)\s*1\s+(?:to\s+)?(?:t\s*)?7\b/,
     type: "T 1-7",
   },
   {
-    pattern:
-      /\b(?:t\s*8\s*-\s*12|t8\s*-\s*12|thoracic\s*8\s*-\s*12|thoracic\s*8\s*(?:to|-)\s*12)\b/,
+    pattern: /\b(?:t|thoracic)\s*8\s+(?:to\s+)?(?:t\s*)?12\b/,
     type: "T 8-12",
   },
 ];
@@ -177,7 +175,7 @@ export function resolvePeripheralBlockadeSiteSelections(caseData) {
   const explicitSelections = splitBlockadeSiteValues(
     caseData.peripheralNerveBlockadeSite,
   );
-  if (explicitSelections.length > 0) {
+  if (Object.hasOwn(caseData, "peripheralNerveBlockadeSite")) {
     return {
       selectedTypes: uniqueValues(explicitSelections),
       mappedToOther: [],
@@ -214,7 +212,7 @@ export function resolveNeuraxialBlockadeSiteSelections(caseData) {
   const explicitSelections = splitBlockadeSiteValues(
     caseData.neuraxialBlockadeSite,
   );
-  if (explicitSelections.length > 0) {
+  if (Object.hasOwn(caseData, "neuraxialBlockadeSite")) {
     return {
       selectedTypes: uniqueValues(explicitSelections),
       unmappedTokens: [],

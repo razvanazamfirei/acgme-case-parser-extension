@@ -18,6 +18,7 @@ export default defineConfig({
   ].filter(Boolean),
   publicDir: "public",
   build: {
+    rollupOptions: { input: { caseWindow: "src/popup/index.html" } },
     outDir: "dist",
     emptyOutDir: true,
     sourcemap: process.env.NODE_ENV === "development" ? "inline" : false,

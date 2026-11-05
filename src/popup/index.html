@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="./popup.css" />
     <title>ACGME Case Submitter</title>
   </head>
-  <body class="w-[600px] min-h-[400px] max-h-[600px] overflow-hidden">
+  <body class="case-window">
     <div class="flex flex-col h-full">
       <!-- Header -->
       <header class="bg-white border-b px-6 py-4">
@@ -16,29 +16,34 @@
               ACGME Case Submitter
             </h1>
             <p class="text-sm text-gray-500 mt-0.5">
-              Upload Excel and cycle through cases
+              Review and submit your case log
             </p>
           </div>
-          <button
-            type="button"
-            id="settingsToggle"
-            class="bg-white/20 hover:bg-white/30 border-0 rounded-md p-1.5 cursor-pointer text-white flex items-center justify-center transition-colors"
-            title="Settings">
-            <svg
-              aria-hidden="true"
-              width="20px"
-              height="20px"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg">
-              <path
-                d="M12 4a1 1 0 0 0-1 1c0 1.692-2.046 2.54-3.243 1.343a1 1 0 1 0-1.414 1.414C7.54 8.954 6.693 11 5 11a1 1 0 1 0 0 2c1.692 0 2.54 2.046 1.343 3.243a1 1 0 0 0 1.414 1.414C8.954 16.46 11 17.307 11 19a1 1 0 1 0 2 0c0-1.692 2.046-2.54 3.243-1.343a1 1 0 1 0 1.414-1.414C16.46 15.046 17.307 13 19 13a1 1 0 1 0 0-2c-1.692 0-2.54-2.046-1.343-3.243a1 1 0 0 0-1.414-1.414C15.046 7.54 13 6.693 13 5a1 1 0 0 0-1-1zm-2.992.777a3 3 0 0 1 5.984 0 3 3 0 0 1 4.23 4.231 3 3 0 0 1 .001 5.984 3 3 0 0 1-4.231 4.23 3 3 0 0 1-5.984 0 3 3 0 0 1-4.231-4.23 3 3 0 0 1 0-5.984 3 3 0 0 1 4.231-4.231z"
-                fill="#0D0D0D" />
-              <path
-                d="M12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-2.828-.828a4 4 0 1 1 5.656 5.656 4 4 0 0 1-5.656-5.656z"
-                fill="#0D0D0D" />
-            </svg>
-          </button>
+          <div class="header-actions">
+            <button type="button" id="showAcgmeBtn" class="text-action">
+              View ACGME
+            </button>
+            <button
+              type="button"
+              id="settingsToggle"
+              class="bg-white/20 hover:bg-white/30 border-0 rounded-md p-1.5 cursor-pointer text-white flex items-center justify-center transition-colors"
+              title="Settings">
+              <svg
+                aria-hidden="true"
+                width="20px"
+                height="20px"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg">
+                <path
+                  d="M12 4a1 1 0 0 0-1 1c0 1.692-2.046 2.54-3.243 1.343a1 1 0 1 0-1.414 1.414C7.54 8.954 6.693 11 5 11a1 1 0 1 0 0 2c1.692 0 2.54 2.046 1.343 3.243a1 1 0 0 0 1.414 1.414C8.954 16.46 11 17.307 11 19a1 1 0 1 0 2 0c0-1.692 2.046-2.54 3.243-1.343a1 1 0 1 0 1.414-1.414C16.46 15.046 17.307 13 19 13a1 1 0 1 0 0-2c-1.692 0-2.54-2.046-1.343-3.243a1 1 0 0 0-1.414-1.414C15.046 7.54 13 6.693 13 5a1 1 0 0 0-1-1zm-2.992.777a3 3 0 0 1 5.984 0 3 3 0 0 1 4.23 4.231 3 3 0 0 1 .001 5.984 3 3 0 0 1-4.231 4.23 3 3 0 0 1-5.984 0 3 3 0 0 1-4.231-4.23 3 3 0 0 1 0-5.984 3 3 0 0 1 4.231-4.231z"
+                  fill="#0D0D0D" />
+                <path
+                  d="M12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-2.828-.828a4 4 0 1 1 5.656 5.656 4 4 0 0 1-5.656-5.656z"
+                  fill="#0D0D0D" />
+              </svg>
+            </button>
+          </div>
         </div>
       </header>
       <!-- Settings Section -->
@@ -204,6 +209,14 @@
                 <span id="submittedCount">0</span>
                 submitted
               </span>
+              <button
+                type="button"
+                id="reviewCasesBtn"
+                class="hidden stat review px-1.5 py-0.5 rounded font-medium"
+                title="Go to cases needing review">
+                <span id="reviewCount">0</span>
+                to review
+              </button>
               <span class="stat skipped px-1.5 py-0.5 rounded font-medium">
                 <span id="skippedCount">0</span>
                 skipped
@@ -237,7 +250,7 @@
                 id="filterPending"
                 checked
                 class="rounded" />
-              <span>Pending only</span>
+              <span>Unfinished</span>
             </label>
           </div>
         </div>
@@ -247,6 +260,31 @@
             <span id="caseStatus" class="status-badge pending">Pending</span>
             <h3 class="text-sm font-medium text-gray-700">Case Details</h3>
           </div>
+          <div id="recoveryPanel" class="hidden recovery-panel">
+            <p id="recoveryMessage"></p>
+            <div class="recovery-actions">
+              <button type="button" id="recheckBtn">Check save</button>
+              <button type="button" id="openAcgmeBtn">Open ACGME</button>
+              <button type="button" id="markManualBtn">Mark submitted</button>
+            </div>
+            <details id="manualRecovery" class="status-options">
+              <summary>Update status manually</summary>
+              <p>After checking this case in ACGME:</p>
+              <div class="recovery-actions">
+                <button type="button" id="markSavedBtn">It was saved</button>
+                <button type="button" id="returnPendingBtn">
+                  Not saved — allow retry
+                </button>
+              </div>
+            </details>
+          </div>
+          <details id="completedActions" class="hidden status-options">
+            <summary id="completedActionsLabel">Change status</summary>
+            <p id="completedActionsHint"></p>
+            <button type="button" id="resetStatusBtn" class="text-action">
+              Return to pending
+            </button>
+          </details>
           <div class="grid grid-cols-2 gap-3">
             <div class="form-field">
               <label for="caseId">Case ID</label>
@@ -287,7 +325,7 @@
                   </svg>
                   <span class="tooltip-text">
                     ACGME age categories: a=&lt;3mo, b=3mo-3yr, c=3-12yr,
-                    d=12-65yr, e=≥65yr\
+                    d=12-65yr, e=≥65yr
                   </span>
                 </span>
               </label>
@@ -854,52 +892,63 @@
               </div>
             </div>
           </div>
-          <div class="flex gap-2 pt-2">
-            <button
-              type="button"
-              id="skipBtn"
-              class="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2 border-0 rounded-md text-sm font-medium cursor-pointer transition-all bg-yellow-400 text-yellow-900 hover:bg-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed">
-              Skip
-            </button>
-            <button
-              type="button"
-              id="fillBtn"
-              class="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2 border-0 rounded-md text-sm font-medium cursor-pointer transition-all bg-green-500 text-white hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed">
-              Fill Form
-            </button>
-            <button
-              type="button"
-              id="fillSubmitBtn"
-              class="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2 border-0 rounded-md text-sm font-medium cursor-pointer transition-all bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Fill and submit case to ACGME">
-              Submit
-            </button>
-          </div>
-          <!-- BEAST Mode -->
-          <div class="mt-3 pt-3 border-t border-gray-200">
-            <button
-              type="button"
-              id="beastModeBtn"
-              class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 border-2 border-red-500 rounded-md text-sm font-bold cursor-pointer transition-all bg-red-500 text-white hover:bg-red-600 hover:border-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Automatically fill and submit all pending cases">
-              <span id="beastModeText">START BEAST MODE</span>
-            </button>
-            <button
-              type="button"
-              id="beastModeStopBtn"
-              class="hidden w-full px-4 py-2 mt-2 border-2 border-gray-400 rounded-md text-sm font-bold text-center cursor-pointer transition-all bg-white text-gray-700 hover:bg-gray-100"
-              title="End BEAST mode and leave the remaining cases pending">
-              STOP BEAST MODE
-            </button>
-            <p class="text-xs text-gray-500 text-center mt-2">
-              Auto-fills and submits all pending cases (0.5-1s delay)
-            </p>
-          </div>
         </div>
       </div>
-      <!-- Status Message -->
+      <div id="caseActions" class="hidden case-actions">
+        <div class="case-action-row">
+          <span id="completionMessage" class="hidden completion-message"></span>
+          <button
+            type="button"
+            id="nextPendingBtn"
+            class="hidden btn btn-primary">
+            Next pending case
+          </button>
+          <button type="button" id="skipBtn" class="btn btn-skip">Skip</button>
+          <button type="button" id="fillBtn" class="btn btn-nav">
+            Fill only
+          </button>
+          <button
+            type="button"
+            id="fillSubmitBtn"
+            class="btn btn-primary"
+            title="Fill and submit this case to ACGME">
+            Fill &amp; submit
+          </button>
+          <button
+            type="button"
+            id="beastModeBtn"
+            class="btn btn-nav"
+            title="Start with this case, then submit the remaining pending cases">
+            <span id="beastModeText">Submit pending cases</span>
+          </button>
+        </div>
+        <div class="batch-hint">
+          <span>You can switch to ACGME while this window stays open.</span>
+          <button
+            type="button"
+            id="beastModeStopBtn"
+            class="hidden"
+            title="End the batch and leave remaining cases pending">
+            Stop batch
+          </button>
+        </div>
+      </div>
+      <div id="storageError" role="alert" class="hidden storage-error">
+        Progress could not be saved on this device. Keep this window open.
+        <button type="button" id="retrySaveBtn">Retry saving</button>
+      </div>
       <div id="statusSection" class="hidden border-t px-6 py-3">
-        <div id="statusMessage" class="text-sm"></div>
+        <div
+          id="statusMessage"
+          class="text-sm"
+          role="status"
+          aria-live="polite"></div>
+        <button
+          type="button"
+          id="cancelOperationBtn"
+          class="hidden cancel-operation">
+          Stop
+        </button>
       </div>
       <footer class="border-t px-6 py-2 bg-gray-50">
         <p id="appVersion" class="text-xs text-gray-500 text-center">v-</p>

@@ -21,11 +21,13 @@ output and autofilling the ACGME Case Entry page:
 
 ## Features
 
-- Parse `.xlsx`, `.xls`, and `.csv` exports in the popup.
+- Parse `.xlsx`, `.xls`, and `.csv` exports in the case window.
 - Validate required input columns before loading a session.
-- Navigate case-by-case with pending/submitted/skipped tracking.
+- Navigate case-by-case with pending/submitted/skipped/needs-review tracking.
 - Fill ACGME form fields from standardized values.
-- Optional delayed auto-submit after fill.
+- Fill only, fill and submit, or submit pending cases with visible progress and stop controls.
+- Work in one reusable case window that stays open when you switch to ACGME.
+- Recover uncertain saves after closing the case window without automatically resubmitting.
 - Session persistence (`chrome.storage.local`) and settings sync (`chrome.storage.sync`).
 
 ## Installation
@@ -58,7 +60,7 @@ bun run build
 ## Development
 
 ```bash
-bun run dev         # Vite dev server for popup iteration
+bun run dev         # Vite dev server for case window iteration
 bun run build       # Production build
 bun run build:dev   # Unminified build with sourcemaps
 bun run clean
@@ -100,7 +102,8 @@ production build and `dist` verification (no test fixtures/markers).
 - `storage`
 - Host access only for `https://apps.acgme.org/ads/CaseLogs/CaseEntry/*`
 
-No remote code execution, no external network calls, no third-party telemetry.
+No remote code execution or third-party telemetry. Submission verification reads
+ACGME’s Last 5 Cases endpoint using the existing signed-in session.
 
 ## Interface Contract
 
@@ -111,7 +114,7 @@ The parser-extension interface is versioned and documented in:
 This includes:
 
 - required input columns and accepted values,
-- popup-to-content message contract,
+- case-window-to-content message contract,
 - compatibility expectations with parser output.
 
 ## Documentation and Metadata

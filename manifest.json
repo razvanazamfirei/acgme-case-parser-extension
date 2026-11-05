@@ -11,12 +11,12 @@
     "128": "public/icon128.png"
   },
   "action": {
-    "default_popup": "src/popup/index.html",
     "default_icon": {
       "16": "public/icon16.png",
       "48": "public/icon48.png",
       "128": "public/icon128.png"
-    }
+    },
+    "default_title": "Open ACGME Case Submitter"
   },
   "content_scripts": [
     {
@@ -27,5 +27,10 @@
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
-  }
+  },
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "minimum_chrome_version": "116"
 }

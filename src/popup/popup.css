@@ -13,24 +13,6 @@
   --color-primary-900: #0c4a6e;
 }
 
-/* BEAST Mode animation */
-@keyframes pulse-beast {
-  0%,
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgb(249 115 22 / 70%);
-  }
-
-  50% {
-    transform: scale(1.02);
-    box-shadow: 0 0 0 0.5rem rgb(249 115 22 / 0%);
-  }
-}
-
-.beast-mode-active {
-  animation: pulse-beast 1.5s ease-in-out infinite;
-}
-
 /* Status badges - custom component */
 .status-badge {
   font-size: 0.625rem;
@@ -63,6 +45,7 @@
 
 /* Match badges - fuzzy match indicators */
 .match-badge {
+  overflow-wrap: anywhere;
   display: inline-block;
   font-size: 0.625rem;
   padding: 0.125rem 0.375rem;
@@ -103,6 +86,7 @@
 }
 
 .tooltip-text {
+  display: none;
   visibility: hidden;
   opacity: 0;
   position: absolute;
@@ -134,7 +118,22 @@
   border-color: rgb(45 55 72) transparent transparent;
 }
 
+.form-field .info-tooltip {
+  position: static;
+}
+.form-field .tooltip-text {
+  top: 1.5rem;
+  bottom: auto;
+  left: 0;
+  width: 100%;
+  transform: none;
+}
+.form-field .tooltip-text::after {
+  display: none;
+}
+
 .info-tooltip:hover .tooltip-text {
+  display: block;
   visibility: visible;
   opacity: 1;
 }
@@ -171,6 +170,7 @@
 /* Upload control row */
 .upload-control {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem;
   justify-content: center;
@@ -362,6 +362,7 @@ body {
 }
 
 .form-field {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -434,6 +435,9 @@ body {
 
 /* Status message styles (restored from old popup.css) */
 .status-message {
+  max-height: 28vh;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
   margin-top: 0.75rem;
   padding: 0.5rem 0.75rem;
   border-radius: 0.375rem;
@@ -484,4 +488,188 @@ dialog::backdrop {
   color: rgb(17 24 39);
   text-align: right;
   margin-left: 0.5rem;
+}
+
+/* Recovery stays next to the case it describes. */
+.recovery-panel {
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #f9fafb;
+  color: #374151;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.recovery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.recovery-actions button,
+.cancel-operation,
+.storage-error button {
+  padding: 6px 10px;
+  border: 1px solid currentColor;
+  border-radius: 5px;
+  background: white;
+  font: inherit;
+  cursor: pointer;
+}
+.recovery-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.status-badge.review,
+.stat.review,
+.status-message.warning {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fcd34d;
+}
+.stat.review {
+  cursor: pointer;
+  border: 1px solid #fcd34d;
+}
+.cancel-operation {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #374151;
+}
+.storage-error {
+  padding: 10px 24px;
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 12px;
+}
+.storage-error button {
+  margin-top: 6px;
+}
+
+.case-actions {
+  padding: 10px 24px;
+  border-top: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+.case-action-row {
+  display: flex;
+  gap: 8px;
+}
+.case-action-row .btn {
+  font-size: 13px;
+  padding: 8px 10px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.case-action-row .btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+#beastModeBtn {
+  margin-left: auto;
+}
+.batch-hint {
+  margin-top: 6px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #6b7280;
+}
+.batch-hint button {
+  text-decoration: underline;
+  cursor: pointer;
+  color: #374151;
+}
+#settingsSection {
+  max-height: 430px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+header,
+footer,
+#statusSection,
+#storageError {
+  flex-shrink: 0;
+}
+
+.recovery-panel.needs-review {
+  border-color: #fcd34d;
+  background: #fffbeb;
+  color: #78350f;
+}
+
+.case-window {
+  width: 100%;
+  height: 100dvh;
+  min-width: 360px;
+  overflow: hidden;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.text-action {
+  color: #0369a1;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.status-options {
+  color: #4b5563;
+  font-size: 12px;
+}
+.status-options summary {
+  cursor: pointer;
+  padding: 4px 0;
+}
+.status-options p {
+  margin: 8px 0;
+}
+.recovery-panel .status-options {
+  margin-top: 12px;
+}
+.completion-message {
+  font-size: 13px;
+  padding: 8px 0;
+  color: #374151;
+}
+.case-action-row {
+  flex-wrap: wrap;
+}
+@media (max-width: 520px) {
+  header {
+    padding: 12px 16px;
+  }
+  header h1 {
+    font-size: 17px;
+  }
+  header p {
+    display: none;
+  }
+  .header-actions {
+    gap: 6px;
+  }
+  #navSection,
+  #previewSection {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  #navSection > div:first-child {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  #navSection .flex.gap-4 {
+    gap: 6px;
+  }
+  .case-actions {
+    padding: 10px 16px;
+  }
+}
+
+/* Long select options must not widen a narrow case window. */
+.form-field,
+#caseJump {
+  min-width: 0;
 }

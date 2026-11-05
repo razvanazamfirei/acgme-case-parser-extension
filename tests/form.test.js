@@ -23,6 +23,8 @@ function buildFormDOM() {
       <option value="">Select</option>
       <option value="GA">GA</option>
       <option value="mac">MAC</option>
+      <option value="PNB Single">PNB Single</option>
+      <option value="Spinal">Spinal</option>
     </select>
     <select id="procedureCategory">
       <option value="">Select</option>
@@ -200,7 +202,7 @@ describe("Form", () => {
 
     it("tracks unmatched values", () => {
       const result = Form.setCheckboxGroup("airway", "ETT; Unknown Device");
-      expect(result.matches.unmatched).toContain("unknown device");
+      expect(result.matches.unmatched).toContain("Unknown Device");
     });
 
     it("returns none when no match found", () => {
@@ -278,6 +280,10 @@ describe("Form", () => {
   // -------------------------------------------------------------------------
 
   describe("validate()", () => {
+    beforeEach(() => {
+      document.getElementById("caseId").value = "C1";
+      document.getElementById("date").value = "1/15/2024";
+    });
     it("returns invalid when attending is missing and no default", () => {
       State.settings.defaultAttending = "";
       document.getElementById("attending").value = "";
@@ -373,7 +379,6 @@ describe("Form", () => {
         vascularAccess: "",
         monitoring: "",
         difficultAirway: "",
-        lifeThreateningPathology: "",
       });
       const radio = document.querySelector(
         'input[name="lifeThreateningPathology"][value="Non-Trauma"]',

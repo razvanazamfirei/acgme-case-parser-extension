@@ -10,25 +10,28 @@ import { Navigation } from "./navigation.js";
 import { Settings } from "./settings.js";
 import { State } from "./state.js";
 import { Storage } from "./storage.js";
+import { Target } from "./target.js";
 import { UI } from "./ui.js";
 
 const activeStyles = [
   "bg-orange-500",
   "hover:bg-orange-600",
   "border-orange-500",
-  "beast-mode-active",
 ];
 
 const beastModeStyles = {
-  paused: ["bg-blue-500", "hover:bg-blue-600", "border-blue-500"],
-  inactive: ["bg-red-500", "hover:bg-red-600", "border-red-500"],
+  paused: ["btn-primary"],
+  inactive: ["btn-nav"],
 };
 
 const FileUpload = {
+  requestId: 0,
+
   async handleFile(file) {
     if (!file) {
       return;
     }
+    const requestId = ++this.requestId;
 
     const fileNameEl = UI.get(DOM.fileName);
     fileNameEl.textContent = file.name;
@@ -37,6 +40,7 @@ const FileUpload = {
 
     try {
       const result = await Excel.parseFile(file);
+      if (requestId !== this.requestId) return;
       const { cases, mappingResult } = result;
 
       if (cases.length === 0) {
@@ -61,6 +65,7 @@ const FileUpload = {
         parseWarnings.length > 0 ? "info" : "success",
       );
     } catch (error) {
+      if (requestId !== this.requestId) return;
       UI.showStatus(`Error parsing file: ${error.message}`, "error");
       console.error(error);
     }
@@ -79,17 +84,17 @@ const BeastMode = {
   isPaused: false,
   currentIndex: 0,
   resumeCallback: null,
+  controller: null,
+  runPending: false,
 
   disableActionButtons() {
-    UI.get(DOM.skipBtn).disabled = true;
-    UI.get(DOM.fillBtn).disabled = true;
-    UI.get(DOM.fillSubmitBtn).disabled = true;
+    UI.bulkActive = true;
+    UI.updateCaseActions();
   },
 
   enableActionButtons() {
-    UI.get(DOM.skipBtn).disabled = false;
-    UI.get(DOM.fillBtn).disabled = false;
-    UI.get(DOM.fillSubmitBtn).disabled = false;
+    UI.bulkActive = false;
+    UI.updateCaseActions();
   },
   async start() {
     if (this.isActive && !this.isPaused) {
@@ -102,29 +107,43 @@ const BeastMode = {
       return;
     }
 
+    if (this.runPending || ACGMEForm.busy) {
+      UI.showStatus(
+        "Waiting for the previous case operation to finish.",
+        "info",
+      );
+      return;
+    }
+    this.runPending = true;
+    this.controller = new AbortController();
+
     // Starting fresh
     this.isActive = true;
     this.shouldStop = false;
     this.isPaused = false;
-    this.currentIndex = 0;
+    UI.bulkPaused = false;
+    this.currentIndex = State.currentIndex;
 
     // Update UI
     const btn = UI.get(DOM.beastModeBtn);
     const text = UI.get(DOM.beastModeText);
     btn.classList.remove(...beastModeStyles.inactive);
     btn.classList.add(...activeStyles);
-    text.textContent = "STOP BEAST MODE";
+    text.textContent = "Stop batch";
 
     this.disableActionButtons();
 
-    UI.showStatus("BEAST MODE ACTIVATED - Processing cases...", "info");
+    UI.progress(
+      "Starting batch… You can switch tabs while this window stays open.",
+    );
 
     try {
       await this.processAllPending();
     } catch (error) {
-      console.error("BEAST mode error:", error);
-      UI.showStatus(`BEAST mode error: ${error.message}`, "error");
+      console.error("Batch error:", error);
+      UI.showStatus(`Batch error: ${error.message}`, "error");
     } finally {
+      this.runPending = false;
       if (!this.isPaused) {
         this.stop();
       }
@@ -133,13 +152,14 @@ const BeastMode = {
 
   pause(message) {
     this.isPaused = true;
+    UI.bulkPaused = true;
 
     // Update UI to show paused state
     const btn = UI.get(DOM.beastModeBtn);
     const text = UI.get(DOM.beastModeText);
     btn.classList.remove(...activeStyles);
     btn.classList.add(...beastModeStyles.paused);
-    text.textContent = "CONTINUE BEAST MODE";
+    text.textContent = "Continue batch";
 
     // Re-enable action buttons so user can fix things
     this.enableActionButtons();
@@ -147,24 +167,25 @@ const BeastMode = {
     // The pause prompts offer a way out, so surface the control that provides it
     UI.showSection(DOM.beastModeStopBtn);
 
-    UI.showStatus(message || "BEAST mode paused", "info");
+    UI.showStatus(message || "Batch paused", "warning");
   },
 
   resume() {
     this.isPaused = false;
+    UI.bulkPaused = false;
 
     // Update UI back to active state
     const btn = UI.get(DOM.beastModeBtn);
     const text = UI.get(DOM.beastModeText);
     btn.classList.remove(...beastModeStyles.paused);
     btn.classList.add(...activeStyles);
-    text.textContent = "STOP BEAST MODE";
+    text.textContent = "Stop batch";
 
     // Disable action buttons again
     this.disableActionButtons();
     UI.hideSection(DOM.beastModeStopBtn);
 
-    UI.showStatus("BEAST MODE RESUMED - Processing cases...", "info");
+    UI.progress("Continuing batch…");
 
     // Call the resume callback if it exists
     if (this.resumeCallback) {
@@ -174,9 +195,11 @@ const BeastMode = {
   },
 
   stop() {
+    this.controller?.abort();
     this.isActive = false;
     this.shouldStop = true;
     this.isPaused = false;
+    UI.bulkPaused = false;
 
     // A paused run is parked on this callback. It has to be settled, otherwise
     // processAllPending() waits forever on a run that is already over.
@@ -188,7 +211,7 @@ const BeastMode = {
     const text = UI.get(DOM.beastModeText);
     btn.classList.remove(...activeStyles, ...beastModeStyles.paused);
     btn.classList.add(...beastModeStyles.inactive);
-    text.textContent = "START BEAST MODE";
+    text.textContent = "Submit pending cases";
 
     // Re-enable action buttons
     this.enableActionButtons();
@@ -204,23 +227,31 @@ const BeastMode = {
   },
 
   async processAllPending() {
-    const totalCases = State.cases.length;
+    const cases = State.cases;
+    const signal = this.controller?.signal;
+    const stopped = () =>
+      this.shouldStop || signal?.aborted || State.cases !== cases;
+    const totalCases = cases.length;
     let processed = 0;
+    const warnings = [];
+    const showSummary = (message, type) =>
+      UI.showStatus(
+        `${message}${warnings.length ? ` Warnings: ${warnings.join("; ")}` : ""}`,
+        warnings.length ? "warning" : type,
+      );
 
     // Start from currentIndex (for resuming) or 0
     const startIndex = this.currentIndex || 0;
 
     const announceStop = () => {
-      UI.showStatus(
-        `BEAST mode stopped. Processed ${processed} cases.`,
-        "info",
-      );
+      showSummary(`Batch stopped. Submitted ${processed} cases.`, "info");
     };
 
-    for (let i = startIndex; i < totalCases; i++) {
+    for (let offset = 0; offset < totalCases; offset++) {
+      const i = (startIndex + offset) % totalCases;
       this.currentIndex = i;
 
-      if (this.shouldStop) {
+      if (stopped()) {
         announceStop();
         return;
       }
@@ -228,7 +259,7 @@ const BeastMode = {
       // Wait if paused
       if (this.isPaused) {
         await this.waitForResume();
-        if (this.shouldStop) {
+        if (stopped()) {
           announceStop();
           return;
         }
@@ -242,41 +273,64 @@ const BeastMode = {
       // Navigate to this case
       Navigation.goToCase(i);
 
-      // Wait for page to fully load before starting fill/submit process
-      await new Promise((resolve) => setTimeout(resolve, 1500)); // 1.5 second delay for page load
+      if (stopped()) {
+        announceStop();
+        return;
+      }
+      // A user may navigate while the delay or validation prompt is pending.
+      if (State.currentIndex !== i) Navigation.goToCase(i);
 
       // Validate - pause if validation fails
       const validation = Form.validate();
       if (!validation.isValid) {
         UI.showValidation(validation);
         this.pause(
-          `BEAST mode paused at case ${i + 1}/${totalCases}. Please complete required fields (${validation.missing.join(", ")}) and click CONTINUE.`,
+          `Batch paused at case ${i + 1}/${totalCases}. Please complete required fields (${validation.missing.join(", ")}) and choose Continue batch.`,
         );
 
         // Wait for user to fix and continue
         await this.waitForResume();
-        if (this.shouldStop) {
+        if (stopped()) {
           announceStop();
           return;
         }
 
+        if (State.currentIndex !== i) Navigation.goToCase(i);
         // Re-validate after user fixes
         const revalidation = Form.validate();
         if (!revalidation.isValid) {
           // Still invalid, pause again
-          i--; // Retry this case
+          offset--; // Retry this case
           continue;
         }
       }
+
+      // A paused case may have been submitted or skipped manually.
+      if (State.getCaseStatus(i) !== STATUS_TYPES.pending) continue;
 
       try {
         // Fill and submit the case
         UI.showStatus(`Processing case ${i + 1}/${totalCases}...`, "info");
 
-        const result = await ACGMEForm.fill(true);
-
+        const result = await ACGMEForm.fill(true, { signal });
+        if (result?.uncertain) {
+          showSummary(
+            `Batch stopped at case ${i + 1}. ${result.errors.join("; ")}`,
+            "warning",
+          );
+          return;
+        }
         if (result?.success && result?.submitted) {
           processed++;
+          if (State.settings.showWarnings && result.warnings?.length)
+            warnings.push(`Case ${i + 1}: ${result.warnings.join("; ")}`);
+        }
+        if (stopped() || result?.cancelled) {
+          announceStop();
+          return;
+        }
+
+        if (result?.success && result?.submitted) {
           UI.showStatus(
             `Case ${i + 1}/${totalCases} submitted! (${processed} total)`,
             "success",
@@ -285,31 +339,30 @@ const BeastMode = {
           console.warn(`Case ${i + 1} failed to submit:`, result);
           // Pause on submission failure
           this.pause(
-            `Case ${i + 1} failed to submit. Check the ACGME form and click CONTINUE to retry or STOP to end.`,
+            `Case ${i + 1} was not submitted. ${result?.errors?.join("; ") || "Check the ACGME form."} Choose Continue batch to retry, or Stop batch to finish later.`,
           );
           await this.waitForResume();
-          if (this.shouldStop) {
+          if (stopped()) {
             announceStop();
             return;
           }
-          i--; // Retry this case
-          continue;
+          offset--; // Retry this case
         }
-
-        // Random delay between 0.5-1 second
-        const delay = Math.random() * 500 + 500; // 500-1000ms
-        await new Promise((resolve) => setTimeout(resolve, delay));
       } catch (error) {
+        if (stopped()) {
+          announceStop();
+          return;
+        }
         console.error(`Error processing case ${i + 1}:`, error);
         this.pause(
           `Error processing case ${i + 1}: ${error.message}. Click CONTINUE to retry or STOP to end.`,
         );
         await this.waitForResume();
-        if (this.shouldStop) {
+        if (stopped()) {
           announceStop();
           return;
         }
-        i--; // Retry this case
+        offset--; // Retry this case
       }
     }
 
@@ -319,13 +372,13 @@ const BeastMode = {
     // Find next pending case or finish
     const nextPending = State.findNextPending(-1);
     if (nextPending === null) {
-      UI.showStatus(
-        `BEAST mode complete! Processed ${processed} cases. All done!`,
-        "success",
+      showSummary(
+        `Batch complete. Submitted ${processed} cases.${State.getStats().review ? ` ${State.getStats().review} case(s) still need review.` : ""}`,
+        State.getStats().review ? "warning" : "success",
       );
     } else {
       Navigation.goToCase(nextPending);
-      UI.showStatus(
+      showSummary(
         `Processed ${processed} cases! ${State.getStats().pending} cases remaining.`,
         "success",
       );
@@ -344,8 +397,14 @@ const Session = {
     }
 
     try {
+      FileUpload.requestId++;
+      BeastMode.stop();
+      ACGMEForm.cancel();
       // Clear storage first
       await Storage.clearState();
+      UI.setStorageError(false);
+      UI.hideSection(DOM.recoveryPanel);
+      UI.hideSection("caseActions");
 
       // Reset the file input completely
       const fileInput = UI.get(DOM.fileInput);
@@ -430,6 +489,7 @@ const Session = {
         DOM.pendingCount,
         DOM.submittedCount,
         DOM.skippedCount,
+        DOM.reviewCount,
       ];
 
       navElements.forEach((elementId) => {
@@ -469,10 +529,7 @@ const Session = {
       // Clear any status messages
       UI.hideStatus();
 
-      // Show success message after a brief delay
-      setTimeout(() => {
-        UI.showStatus("Session cleared - ready for new file", "success");
-      }, 100);
+      UI.showStatus("Session cleared - ready for new file", "success");
     } catch (error) {
       console.error("Error clearing session:", error);
       UI.showStatus("Error clearing session", "error");
@@ -527,6 +584,32 @@ const EventHandlers = {
       });
     };
 
+    const showAcgme = async () => {
+      try {
+        await Target.show();
+      } catch (error) {
+        UI.showStatus(error.message, "error");
+      }
+    };
+    addListener(DOM.showAcgmeBtn, "click", showAcgme);
+    addListener(DOM.openAcgmeBtn, "click", showAcgme);
+    addListener(DOM.nextPendingBtn, "click", () =>
+      Navigation.goToNextPending(),
+    );
+
+    // Persist edits as they happen so closing the popup also keeps corrections.
+    for (const event of ["input", "change"]) {
+      UI.get(DOM.previewSection)?.addEventListener(event, (e) => {
+        e.target
+          .closest(".form-field, .blockade-section")
+          ?.querySelector(".match-badge")
+          ?.remove();
+        Form.saveCurrent();
+        UI.updateCaseActions();
+        Storage.saveState();
+      });
+    }
+
     // Upload
     addListener(DOM.uploadBtn, "click", () => FileUpload.openFilePicker());
     addListener(DOM.fileInput, "change", (e) =>
@@ -553,6 +636,8 @@ const EventHandlers = {
 
     // Actions
     addListener(DOM.skipBtn, "click", () => {
+      Form.saveCurrent();
+      delete State.caseAttempts[State.currentIndex];
       State.setCaseStatus(State.currentIndex, STATUS_TYPES.skipped);
       Navigation.update();
       Storage.saveState();
@@ -561,53 +646,102 @@ const EventHandlers = {
 
     addListener(DOM.fillBtn, "click", async () => {
       const validation = Form.validate();
+      UI.showValidation(validation);
       if (!validation.isValid) {
-        UI.showValidation(validation);
         UI.showStatus(
-          "Please complete required fields before filling",
+          `Complete required fields: ${validation.missing.join(", ")}`,
           "error",
         );
         return;
       }
 
-      if (validation.hasWarnings) {
-        UI.showValidation(validation);
-      }
-
-      UI.get(DOM.fillBtn).disabled = true;
-      try {
-        await ACGMEForm.fill(false);
-      } finally {
-        UI.get(DOM.fillBtn).disabled = false;
-      }
+      await ACGMEForm.fill(false);
     });
 
     addListener(DOM.fillSubmitBtn, "click", async () => {
       const validation = Form.validate();
 
-      // Show validation but don't block submission
-      if (!validation.isValid || validation.hasWarnings) {
-        UI.showValidation(validation);
-        if (!validation.isValid) {
-          UI.showStatus(
-            "Warning: Some required fields are missing. Proceeding anyway.",
-            "info",
-          );
-        }
+      UI.showValidation(validation);
+      if (!validation.isValid) {
+        UI.showStatus(
+          `Complete required fields: ${validation.missing.join(", ")}`,
+          "error",
+        );
+        return;
       }
-
-      const submitBtn = UI.get(DOM.fillSubmitBtn);
-      submitBtn.disabled = true;
-      try {
-        const result = await ACGMEForm.fill(true);
-        if (result?.success && result?.submitted) {
-          setTimeout(() => Navigation.goToNextPending(), 1000);
-        }
-      } finally {
-        // Always re-enable the button after submission attempt
-        submitBtn.disabled = false;
+      const cases = State.cases;
+      const index = State.currentIndex;
+      const result = await ACGMEForm.fill(true);
+      if (
+        result?.submitted &&
+        State.cases === cases &&
+        State.currentIndex === index
+      ) {
+        Navigation.goToNextPending();
+        const warnings = State.settings.showWarnings
+          ? result.warnings || []
+          : [];
+        UI.showStatus(
+          `Case ${index + 1} saved in ACGME.${warnings.length ? ` Warning: ${warnings.join("; ")}` : ""}`,
+          warnings.length ? "warning" : "success",
+        );
       }
     });
+
+    addListener(DOM.cancelOperationBtn, "click", () => {
+      if (BeastMode.isActive) BeastMode.stop();
+      ACGMEForm.cancel();
+      UI.progress(
+        "Stopping… Checking whether a submission was already attempted.",
+      );
+    });
+    const advanceAfterSave = (message) => {
+      Navigation.goToNextPending();
+      const review = State.getStats().review;
+      UI.showStatus(
+        `${message}${review ? ` ${review} case(s) still need review.` : ""}`,
+        review ? "warning" : "success",
+      );
+    };
+    addListener(DOM.recheckBtn, "click", async () => {
+      const cases = State.cases;
+      const index = State.currentIndex;
+      await ACGMEForm.recheck();
+      if (
+        State.cases === cases &&
+        State.currentIndex === index &&
+        State.getCaseStatus(index) === STATUS_TYPES.submitted
+      )
+        advanceAfterSave(`Case ${index + 1} saved in ACGME.`);
+    });
+    const markSaved = () => {
+      if (ACGMEForm.busy || UI.bulkActive) return;
+      const index = State.currentIndex;
+      State.setCaseStatus(index, STATUS_TYPES.submitted);
+      delete State.caseAttempts[index];
+      Navigation.update();
+      Storage.saveState();
+      advanceAfterSave(`Case ${index + 1} marked submitted.`);
+    };
+    addListener(DOM.markSavedBtn, "click", markSaved);
+    addListener(DOM.markManualBtn, "click", markSaved);
+    const returnToPending = () => {
+      if (ACGMEForm.busy || UI.bulkActive) return;
+      State.setCaseStatus(State.currentIndex, STATUS_TYPES.pending);
+      delete State.caseAttempts[State.currentIndex];
+      Navigation.update();
+      Storage.saveState();
+      UI.showStatus("Returned to pending.", "info");
+    };
+    addListener(DOM.returnPendingBtn, "click", returnToPending);
+    addListener(DOM.resetStatusBtn, "click", returnToPending);
+    addListener(DOM.reviewCasesBtn, "click", () => {
+      const index = State.cases.findIndex(
+        (_, i) => State.getCaseStatus(i) === STATUS_TYPES.review,
+      );
+      if (index >= 0) Navigation.goToCase(index);
+    });
+    addListener(DOM.retrySaveBtn, "click", () => Storage.saveState());
 
     // BEAST Mode
     addListener(DOM.beastModeBtn, "click", () => {
@@ -664,7 +798,7 @@ const EventHandlers = {
 
     // Keyboard shortcuts
     document.addEventListener("keydown", (e) => {
-      if (State.cases.length === 0) {
+      if (State.cases.length === 0 || UI.operationActive || UI.bulkActive) {
         return;
       }
 

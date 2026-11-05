@@ -203,7 +203,11 @@ describe("Excel.readMeta", () => {
       SheetNames: ["Info", "_meta"],
     };
     const meta = Excel.readMeta(workbook);
-    expect(meta).toEqual({ version: "2", formatType: "standalone" });
+    expect(meta).toEqual({
+      version: "2",
+      formatType: "standalone",
+      date1904: false,
+    });
     expect(XLSX.utils.sheet_to_json).toHaveBeenCalledTimes(1);
     expect(XLSX.utils.sheet_to_json).toHaveBeenCalledWith(metaSheet, {
       header: 1,
