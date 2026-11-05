@@ -18,6 +18,7 @@ function buildFormDOM() {
       <option value="1">ASA 1</option>
       <option value="2">ASA 2</option>
       <option value="2E">ASA 2E</option>
+      <option value="5E">ASA 5E</option>
     </select>
     <select id="anesthesia">
       <option value="">Select</option>

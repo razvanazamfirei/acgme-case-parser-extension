@@ -184,7 +184,8 @@ If progress cannot be saved on your device, a persistent message offers
 
 - Files are parsed locally in your browser case window.
 - Settings and session progress are stored in Chrome storage.
-- The extension uses no external API calls or telemetry.
+- Submission verification reads ACGME's Last 5 Cases list using your signed-in session.
+- The extension sends no data to third-party services and collects no telemetry.
 
 See `PRIVACY.md` for details.
 

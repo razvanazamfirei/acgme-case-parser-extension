@@ -7,6 +7,9 @@ import { State } from "./state.js";
 import { UI } from "./ui.js";
 
 export const Storage = {
+  pendingWrites: new Set(),
+  clearing: false,
+
   async loadState() {
     try {
       const result = await chrome.storage.local.get([
@@ -36,24 +39,36 @@ export const Storage = {
   },
 
   async saveState() {
+    if (this.clearing) return false;
+    let write;
     try {
-      await chrome.storage.local.set({
+      write = chrome.storage.local.set({
         [STORAGE_KEYS.cases]: State.cases,
         [STORAGE_KEYS.currentIndex]: State.currentIndex,
         [STORAGE_KEYS.caseStatuses]: State.caseStatuses,
         [STORAGE_KEYS.caseAttempts]: State.caseAttempts,
       });
+      this.pendingWrites.add(write);
+      await write;
       UI.setStorageError(false);
       return true;
     } catch (error) {
       UI.setStorageError(true);
       console.error("Error saving state:", error);
       return false;
+    } finally {
+      this.pendingWrites.delete(write);
     }
   },
 
+  // Drain earlier writes and reject new ones until removal completes. Keep the
+  // in-memory session if removal fails so the user can retry without losing it.
   async clearState() {
+    if (this.clearing)
+      throw new Error("Session clearing is already in progress");
+    this.clearing = true;
     try {
+      await Promise.allSettled([...this.pendingWrites]);
       await chrome.storage.local.remove([
         STORAGE_KEYS.cases,
         STORAGE_KEYS.currentIndex,
@@ -64,6 +79,8 @@ export const Storage = {
     } catch (error) {
       console.error("Error clearing state:", error);
       throw error;
+    } finally {
+      this.clearing = false;
     }
   },
 

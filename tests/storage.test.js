@@ -92,6 +92,53 @@ describe("Storage", () => {
   // -------------------------------------------------------------------------
 
   describe("clearState()", () => {
+    it("removes the session after an earlier pending write settles", async () => {
+      State.setCases([{ caseId: "OLD" }]);
+      let stored = {};
+      let finishWrite;
+      chrome.storage.local.set.mockImplementation((data) => {
+        const snapshot = structuredClone(data);
+        return new Promise((resolve) => {
+          finishWrite = () => {
+            stored = snapshot;
+            resolve();
+          };
+        });
+      });
+      chrome.storage.local.remove.mockImplementation(async () => {
+        stored = {};
+      });
+      const saving = Storage.saveState();
+      const clearing = Storage.clearState();
+      finishWrite();
+      await Promise.all([saving, clearing]);
+      expect(stored[STORAGE_KEYS.cases]).toBeUndefined();
+      expect(State.cases).toEqual([]);
+    });
+
+    it("does not start another write while session removal is pending", async () => {
+      State.setCases([{ caseId: "OLD" }]);
+      let finishRemoval;
+      let removalStarted;
+      const started = new Promise((resolve) => {
+        removalStarted = resolve;
+      });
+      chrome.storage.local.remove.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            finishRemoval = resolve;
+            removalStarted();
+          }),
+      );
+      const clearing = Storage.clearState();
+      await started;
+      const saved = await Storage.saveState();
+      finishRemoval();
+      await clearing;
+      expect(saved).toBe(false);
+      expect(chrome.storage.local.set).not.toHaveBeenCalled();
+    });
+
     it("removes all state keys and resets State", async () => {
       State.cases = [{ caseId: "Y" }];
       State.currentIndex = 1;
@@ -109,8 +156,15 @@ describe("Storage", () => {
     });
 
     it("reports failure instead of pretending the session was cleared", async () => {
+      State.setCases([{ caseId: "KEEP" }]);
+      State.setCaseStatus(0, "review");
+      const cases = State.cases;
       chrome.storage.local.remove.mockRejectedValue(new Error("remove error"));
       await expect(Storage.clearState()).rejects.toThrow("remove error");
+      expect(State.cases).toBe(cases);
+      expect(State.getCaseStatus(0)).toBe("review");
+      chrome.storage.local.set.mockResolvedValue(undefined);
+      expect(await Storage.saveState()).toBe(true);
     });
   });
 

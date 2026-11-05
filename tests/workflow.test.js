@@ -13,15 +13,16 @@ import { UI } from "../src/popup/ui.js";
 describe("popup case editing workflow", () => {
   beforeEach(() => {
     const html = readFileSync(resolve("src/popup/index.html"), "utf8");
-    document.body.innerHTML = html
-      .match(/<body[^>]*>([\s\S]*)<\/body>/)[1]
-      .replace(/<script[\s\S]*?<\/script>/g, "");
+    const fixture = new DOMParser().parseFromString(html, "text/html");
+    for (const script of fixture.querySelectorAll("script")) script.remove();
+    document.body.replaceChildren(...fixture.body.childNodes);
     vi.clearAllMocks();
     UI.operationActive = false;
     UI.bulkActive = false;
     UI.bulkPaused = false;
     ACGMEForm.busy = false;
     chrome.storage.local.set.mockResolvedValue(undefined);
+    chrome.storage.local.remove.mockResolvedValue(undefined);
     State.settings.submitDelay = 0;
     Target.tabId = null;
     State.reset();
@@ -207,6 +208,22 @@ describe("popup case editing workflow", () => {
     Navigation.goToCase(0);
     expect(Form.getRadioGroup("lifeThreateningPathology")).toBe("");
   });
+
+  it.each([
+    [true, {}, "Non-Trauma"],
+    [false, {}, ""],
+    [true, { lifeThreateningPathology: "" }, ""],
+    [true, { lifeThreateningPathology: "Trauma" }, "Trauma"],
+  ])(
+    "applies 5E defaults to the matched ASA while honoring settings and explicit choices (%s, %j)",
+    (enabled, explicit, expected) => {
+      State.settings.auto5EPathology = enabled;
+      Object.assign(State.cases[0], { asa: "5E - Emergency", ...explicit });
+      Form.populate(State.getCurrentCase());
+      expect(Form.getData().asa).toBe("5E");
+      expect(Form.getRadioGroup("lifeThreateningPathology")).toBe(expected);
+    },
+  );
   it("does not mistake Adult for infant age code a, and shows the original value for review", () => {
     State.cases[0].ageCategory = "Adult";
     Form.populate(State.getCurrentCase());
@@ -461,6 +478,59 @@ describe("popup case editing workflow", () => {
     expect(document.getElementById("fillSubmitBtn").disabled).toBe(false);
   });
 
+  it("rechecks a restored attempt in the current connected tab instead of its stale tab", async () => {
+    vi.useFakeTimers();
+    transport();
+    Target.tabId = 42;
+    State.setCaseStatus(0, "review");
+    State.caseAttempts[0] = {
+      kind: "submission",
+      tabId: 7,
+      caseId: "CASE-A",
+      date: "10/01/2026",
+      baseline: [{ key: "old-record" }],
+    };
+    chrome.tabs.sendMessage.mockImplementation((tabId, message, callback) => {
+      expect(message.action).toBe("getRecentCases");
+      callback(
+        tabId === 42
+          ? {
+              success: true,
+              cases: [
+                { key: "new-record", caseId: "CASE-A", date: "10/1/2026" },
+              ],
+            }
+          : { success: false },
+      );
+    });
+    await finish(ACGMEForm.recheck());
+    expect(State.getCaseStatus(0)).toBe("submitted");
+    expect(chrome.tabs.sendMessage.mock.calls.map(([tabId]) => tabId)).toEqual([
+      42,
+    ]);
+  });
+
+  it("reports an unavailable connected tab without polling a restored tab ID", async () => {
+    vi.useFakeTimers();
+    transport();
+    Target.tabId = 42;
+    State.setCaseStatus(0, "review");
+    State.caseAttempts[0] = {
+      kind: "submission",
+      tabId: 7,
+      caseId: "CASE-A",
+      date: "10/01/2026",
+      baseline: [],
+    };
+    chrome.tabs.get.mockRejectedValueOnce(new Error("Closed"));
+    await finish(ACGMEForm.recheck());
+    expect(State.getCaseStatus(0)).toBe("review");
+    expect(chrome.tabs.sendMessage).not.toHaveBeenCalled();
+    expect(document.getElementById("statusMessage").textContent).toContain(
+      "Could not recheck",
+    );
+  });
+
   it("does not submit when the recovery record cannot be saved", async () => {
     vi.useFakeTimers();
     transport();
@@ -492,6 +562,62 @@ describe("popup case editing workflow", () => {
     expect(State.getCaseStatus(0)).toBe("pending");
     expect(State.caseAttempts[0]).toBeUndefined();
   });
+
+  it.each(["during", "after"])(
+    "does not restore a cleared session when a fill finishes %s removal",
+    async (timing) => {
+      transport();
+      let finishFill;
+      const original = chrome.tabs.sendMessage.getMockImplementation();
+      chrome.tabs.sendMessage.mockImplementation((id, message, callback) => {
+        if (message.action === "fillCase")
+          finishFill = () =>
+            callback({ success: true, result: { success: true } });
+        else original(id, message, callback);
+      });
+      let stored = { acgme_cases: structuredClone(State.cases) };
+      const writes = [];
+      chrome.storage.local.set.mockImplementation((data) => {
+        const snapshot = structuredClone(data);
+        return new Promise((resolve) =>
+          writes.push(() => {
+            stored = snapshot;
+            resolve();
+          }),
+        );
+      });
+      let finishRemoval;
+      chrome.storage.local.remove.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            finishRemoval = () => {
+              stored = {};
+              resolve();
+            };
+          }),
+      );
+      const filling = ACGMEForm.fill(false);
+      await vi.waitFor(() => expect(finishFill).toBeTypeOf("function"));
+      const clearing = globalThis.__APP_TEST_API__.Session.clear();
+      document.getElementById("confirmDialogOk").click();
+      await vi.waitFor(() => expect(finishRemoval).toBeTypeOf("function"));
+      if (timing === "during") {
+        finishFill();
+        await vi.waitFor(() => expect(ACGMEForm.busy).toBe(false));
+      }
+      finishRemoval();
+      await clearing;
+      if (timing === "after") finishFill();
+      for (const finishWrite of writes) finishWrite();
+      await filling;
+      expect(State.cases).toEqual([]);
+      expect(document.getElementById("statusMessage").textContent).toContain(
+        "Session cleared",
+      );
+      chrome.storage.local.get.mockResolvedValue(stored);
+      expect(await Storage.loadState()).toBe(false);
+    },
+  );
 
   it("waits for readiness without refilling and keeps progress visible while working", async () => {
     vi.useFakeTimers();

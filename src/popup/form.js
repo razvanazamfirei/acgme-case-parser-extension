@@ -216,6 +216,7 @@ export const Form = {
 
     const mappedCase = {
       ...caseData,
+      asa: UI.get(DOM.asa).value,
       anesthesia: UI.get(DOM.anesthesia).value,
     };
     const neuraxial = resolveNeuraxialBlockadeSiteSelections(mappedCase);
@@ -266,7 +267,7 @@ export const Form = {
       caseData.lifeThreateningPathology || "",
     );
 
-    this.apply5ELogic(caseData);
+    this.apply5ELogic(mappedCase);
     this.syncBlockadeSiteVisibility();
     this.updateStatusBadge();
     this.renderedCase = caseData;

@@ -132,11 +132,12 @@ export const ACGMEForm = {
         delete State.caseAttempts[index];
         Storage.saveState();
       }
-      UI.showStatus(
-        "Stopped before submission. This case is still pending.",
-        "info",
-        { persistent: true },
-      );
+      if (ownsCase())
+        UI.showStatus(
+          "Stopped before submission. This case is still pending.",
+          "info",
+          { persistent: true },
+        );
       return {
         success: false,
         submitted: false,
@@ -144,8 +145,10 @@ export const ACGMEForm = {
         errors: ["Case operation stopped before submission."],
       };
     };
-    const progress = (message) =>
-      UI.progress(`Case ${index + 1}/${cases.length}: ${message}`);
+    const progress = (message) => {
+      if (ownsCase())
+        UI.progress(`Case ${index + 1}/${cases.length}: ${message}`);
+    };
     try {
       Form.saveCurrent();
       const caseData = Form.getData();
@@ -205,8 +208,10 @@ export const ACGMEForm = {
             prepared = true;
             // Persist before sending: closing the popup must never make a possible save retryable.
             if (!(await Storage.saveState())) {
-              State.setCaseStatus(index, STATUS_TYPES.pending);
-              delete State.caseAttempts[index];
+              if (ownsCase()) {
+                State.setCaseStatus(index, STATUS_TYPES.pending);
+                delete State.caseAttempts[index];
+              }
               prepared = false;
               throw new Error(
                 "Progress could not be saved on this device. Retry saving progress before submitting.",
@@ -281,8 +286,9 @@ export const ACGMEForm = {
     UI.setOperation(true);
     UI.progress(`Case ${index + 1}: checking recent ACGME saves…`);
     try {
+      const tab = await Target.get();
       const submitted = await confirmSubmission(
-        attempt,
+        { ...attempt, tabId: tab.id },
         () => this.controller.signal.aborted || State.cases !== cases,
       );
       if (State.cases !== cases) return;
@@ -294,6 +300,7 @@ export const ACGMEForm = {
           "warning",
         );
     } catch {
+      if (State.cases !== cases) return;
       UI.showStatus(
         "Could not recheck this save. Open ACGME and check the case there.",
         "warning",
