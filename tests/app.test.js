@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../src/popup/acgme.js", () => ({
-  ACGMEForm: { fill: vi.fn() },
+  ACGMEForm: { fill: vi.fn(), cancel: vi.fn() },
 }));
 vi.mock("../src/popup/excel.js", () => ({
   Excel: { parseFile: vi.fn() },
@@ -9,6 +9,7 @@ vi.mock("../src/popup/excel.js", () => ({
 vi.mock("../src/popup/form.js", () => ({
   Form: {
     populate: vi.fn(),
+    saveCurrent: vi.fn(),
     validate: vi.fn(() => ({
       isValid: true,
       missing: [],
@@ -52,6 +53,7 @@ import { Navigation } from "../src/popup/navigation.js";
 import { Settings } from "../src/popup/settings.js";
 import { State } from "../src/popup/state.js";
 import { Storage } from "../src/popup/storage.js";
+import { UI } from "../src/popup/ui.js";
 
 const appTestApi = globalThis.__APP_TEST_API__;
 
@@ -146,6 +148,9 @@ describe("App components", () => {
   beforeEach(() => {
     buildAppDOM();
     State.reset();
+    UI.operationActive = false;
+    UI.bulkActive = false;
+    UI.bulkPaused = false;
     State.settings = {
       defaultInstitution: "",
       defaultAttending: "",
@@ -182,7 +187,7 @@ describe("App components", () => {
     });
   });
 
-  describe("EventHandlers", () => {
+  describe("Blockade visibility handlers", () => {
     it("syncs blockade site visibility when anesthesia changes", () => {
       EventHandlers.register();
       document.getElementById("anesthesia").dispatchEvent(new Event("change"));
@@ -195,6 +200,51 @@ describe("App components", () => {
   // -------------------------------------------------------------------------
 
   describe("FileUpload.handleFile()", () => {
+    it("keeps the newest chosen file when an earlier read finishes later", async () => {
+      const mappingResult = { missingRequired: [], missingOptional: [] };
+      let finishFirst;
+      Excel.parseFile.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finishFirst = resolve;
+          }),
+      );
+      const first = FileUpload.handleFile({ name: "old.xlsx" });
+      Excel.parseFile.mockResolvedValueOnce({
+        cases: [{ caseId: "NEW" }],
+        mappingResult,
+      });
+      await FileUpload.handleFile({ name: "new.xlsx" });
+      finishFirst({ cases: [{ caseId: "OLD" }], mappingResult });
+      await first;
+      expect(State.cases[0].caseId).toBe("NEW");
+      expect(document.getElementById("fileName").textContent).toBe("new.xlsx");
+    });
+
+    it("does not restore a pending file read after the user clears the session", async () => {
+      let finishRead;
+      Excel.parseFile.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finishRead = resolve;
+          }),
+      );
+      const reading = FileUpload.handleFile({ name: "old.xlsx" });
+      const dialog = document.getElementById("confirmDialog");
+      dialog.showModal = vi.fn();
+      dialog.close = vi.fn();
+      const clearing = Session.clear();
+      document.getElementById("confirmDialogOk").click();
+      await clearing;
+      finishRead({
+        cases: [{ caseId: "OLD" }],
+        mappingResult: { missingRequired: [], missingOptional: [] },
+      });
+      await reading;
+      expect(State.cases).toEqual([]);
+      expect(Storage.saveState).not.toHaveBeenCalled();
+    });
+
     it("does nothing when file is null", async () => {
       await FileUpload.handleFile(null);
       expect(Excel.parseFile).not.toHaveBeenCalled();
@@ -395,7 +445,7 @@ describe("App components", () => {
       );
     });
 
-    it("shows delayed success status after clearing", async () => {
+    it("shows success immediately without overwriting the next status", async () => {
       vi.useFakeTimers();
       try {
         const dialog = document.getElementById("confirmDialog");
@@ -406,10 +456,13 @@ describe("App components", () => {
         const clearPromise = Session.clear();
         document.getElementById("confirmDialogOk").click();
         await clearPromise;
-        await vi.advanceTimersByTimeAsync(100);
-
         expect(document.getElementById("statusMessage").textContent).toContain(
           "Session cleared - ready for new file",
+        );
+        UI.showStatus("Loaded new file", "success");
+        await vi.advanceTimersByTimeAsync(100);
+        expect(document.getElementById("statusMessage").textContent).toBe(
+          "Loaded new file",
         );
       } finally {
         vi.useRealTimers();
@@ -527,11 +580,16 @@ describe("App components", () => {
   describe("BeastMode", () => {
     beforeEach(() => {
       State.setCases([{ caseId: "C1" }, { caseId: "C2" }]);
+      UI.operationActive = false;
+      UI.bulkActive = false;
+      UI.bulkPaused = false;
       BeastMode.isActive = false;
       BeastMode.isPaused = false;
       BeastMode.shouldStop = false;
       BeastMode.currentIndex = 0;
       BeastMode.resumeCallback = null;
+      BeastMode.controller = null;
+      BeastMode.runPending = false;
     });
 
     it("stop() resets BeastMode state and re-enables buttons", () => {
@@ -574,6 +632,32 @@ describe("App components", () => {
       expect(resumeSpy).toHaveBeenCalled();
     });
 
+    it("starts at the selected case, wraps once, and skips cases needing review", async () => {
+      State.setCases([
+        { caseId: "C1" },
+        { caseId: "C2" },
+        { caseId: "C3" },
+        { caseId: "C4" },
+      ]);
+      State.currentIndex = 2;
+      State.setCaseStatus(3, "review");
+      Form.validate.mockReturnValue({ isValid: true });
+      const submitted = [];
+      Navigation.goToCase.mockImplementation((index) => {
+        State.currentIndex = index;
+      });
+      ACGMEForm.fill.mockImplementation(async () => {
+        submitted.push(State.currentIndex);
+        State.setCaseStatus(State.currentIndex, "submitted");
+        return { success: true, submitted: true };
+      });
+      await BeastMode.start();
+      expect(submitted).toEqual([2, 0, 1]);
+      expect(document.getElementById("statusMessage").textContent).toContain(
+        "1 case(s) still need review",
+      );
+    });
+
     it("processAllPending() processes pending cases", async () => {
       vi.useFakeTimers();
       State.setCases([{ caseId: "C1" }]);
@@ -592,7 +676,118 @@ describe("App components", () => {
       await vi.runAllTimersAsync();
       await promise;
 
-      expect(ACGMEForm.fill).toHaveBeenCalledWith(true);
+      expect(ACGMEForm.fill).toHaveBeenCalledWith(true, { signal: undefined });
+      vi.useRealTimers();
+    });
+
+    it("keeps fill warnings in the batch summary", async () => {
+      State.setCases([{ caseId: "C1" }]);
+      State.settings.showWarnings = true;
+      Form.validate.mockReturnValue({ isValid: true });
+      ACGMEForm.fill.mockImplementation(async () => {
+        State.setCaseStatus(0, "submitted");
+        return {
+          success: true,
+          submitted: true,
+          warnings: ["Used default attending"],
+        };
+      });
+      await BeastMode.start();
+      expect(document.getElementById("statusMessage").textContent).toContain(
+        "Case 1: Used default attending",
+      );
+      expect(
+        document.getElementById("statusMessage").classList.contains("warning"),
+      ).toBe(true);
+    });
+
+    it("STOP aborts the in-flight operation and prevents another case", async () => {
+      Form.validate.mockReturnValue({ isValid: true });
+      let finish;
+      ACGMEForm.fill.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve;
+          }),
+      );
+      const running = BeastMode.start();
+      const signal = ACGMEForm.fill.mock.calls[0][1].signal;
+      BeastMode.stop();
+      expect(signal.aborted).toBe(true);
+      finish({ cancelled: true });
+      await running;
+      expect(ACGMEForm.fill).toHaveBeenCalledTimes(1);
+      expect(BeastMode.runPending).toBe(false);
+    });
+
+    it("does not restart while an old run is finishing", async () => {
+      Form.validate.mockReturnValue({ isValid: true });
+      let finish;
+      ACGMEForm.fill.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve;
+          }),
+      );
+      const running = BeastMode.start();
+      BeastMode.stop();
+      await BeastMode.start();
+      expect(ACGMEForm.fill).toHaveBeenCalledTimes(1);
+      finish({ cancelled: true });
+      await running;
+    });
+
+    it("stops bulk processing without retrying an unconfirmed save", async () => {
+      vi.useFakeTimers();
+      Form.validate.mockReturnValue({ isValid: true });
+      ACGMEForm.fill.mockResolvedValue({
+        success: true,
+        submitted: false,
+        uncertain: true,
+        errors: ["Check ACGME before retrying"],
+      });
+      const running = BeastMode.start();
+      await vi.runAllTimersAsync();
+      await running;
+      expect(ACGMEForm.fill).toHaveBeenCalledTimes(1);
+      expect(BeastMode.isActive).toBe(false);
+      expect(BeastMode.isPaused).toBe(false);
+      vi.useRealTimers();
+    });
+
+    it("keeps an uncertain-save warning visible after STOP", async () => {
+      vi.useFakeTimers();
+      Form.validate.mockReturnValue({ isValid: true });
+      ACGMEForm.fill.mockImplementation(async () => {
+        BeastMode.stop();
+        return { uncertain: true, errors: ["Check ACGME before retrying"] };
+      });
+      const running = BeastMode.start();
+      await vi.runAllTimersAsync();
+      await running;
+      expect(document.getElementById("statusMessage").textContent).toContain(
+        "Check ACGME before retrying",
+      );
+      vi.useRealTimers();
+    });
+
+    it("does not resubmit a paused case handled manually", async () => {
+      vi.useFakeTimers();
+      State.setCases([{ caseId: "C1" }]);
+      Form.validate
+        .mockReturnValueOnce({
+          isValid: false,
+          missing: ["Attending"],
+          warnings: [],
+        })
+        .mockReturnValue({ isValid: true });
+      const running = BeastMode.start();
+      await vi.advanceTimersByTimeAsync(1600);
+      State.setCaseStatus(0, "submitted");
+      BeastMode.resume();
+      await vi.runAllTimersAsync();
+      await running;
+      expect(ACGMEForm.fill).not.toHaveBeenCalled();
       vi.useRealTimers();
     });
 
@@ -686,9 +881,9 @@ describe("App components", () => {
       await BeastMode.start();
 
       expect(processSpy).toHaveBeenCalled();
-      expect(errorSpy).toHaveBeenCalledWith("BEAST mode error:", startError);
+      expect(errorSpy).toHaveBeenCalledWith("Batch error:", startError);
       expect(document.getElementById("statusMessage").textContent).toContain(
-        "BEAST mode error: beast failed",
+        "Batch error: beast failed",
       );
     });
 
@@ -714,7 +909,7 @@ describe("App components", () => {
       await vi.runAllTimersAsync();
       await promise;
 
-      expect(ACGMEForm.fill).toHaveBeenCalledWith(true);
+      expect(ACGMEForm.fill).toHaveBeenCalledWith(true, { signal: undefined });
       vi.useRealTimers();
     });
 
@@ -743,7 +938,7 @@ describe("App components", () => {
 
       expect(ACGMEForm.fill).not.toHaveBeenCalled();
       expect(document.getElementById("statusMessage").textContent).toContain(
-        "BEAST mode stopped",
+        "Batch stopped",
       );
       vi.useRealTimers();
     });
@@ -944,6 +1139,23 @@ describe("App components", () => {
       expect(ACGMEForm.fill).toHaveBeenCalledWith(false);
     });
 
+    it("clears a previous validation message when Fill only is now valid", () => {
+      document.getElementById("validationSummary").classList.remove("hidden");
+      Form.validate.mockReturnValue({
+        isValid: true,
+        missing: [],
+        warnings: [],
+        hasWarnings: false,
+      });
+      ACGMEForm.fill.mockResolvedValue({ success: true, submitted: false });
+      document.getElementById("fillBtn").click();
+      expect(
+        document
+          .getElementById("validationSummary")
+          .classList.contains("hidden"),
+      ).toBe(true);
+    });
+
     it("fillSubmitBtn click calls ACGMEForm.fill(true)", async () => {
       Form.validate.mockReturnValue({
         isValid: true,
@@ -977,7 +1189,7 @@ describe("App components", () => {
       }
     });
 
-    it("fillSubmitBtn with invalid form shows warning but still fills", async () => {
+    it("fillSubmitBtn with invalid form explains what to fix without submitting", async () => {
       Form.validate.mockReturnValue({
         isValid: false,
         missing: ["Attending"],
@@ -987,7 +1199,28 @@ describe("App components", () => {
       ACGMEForm.fill.mockResolvedValue({ success: false, submitted: false });
       document.getElementById("fillSubmitBtn").click();
       await new Promise((resolve) => setTimeout(resolve, 0));
-      expect(ACGMEForm.fill).toHaveBeenCalledWith(true);
+      expect(ACGMEForm.fill).not.toHaveBeenCalled();
+    });
+
+    it("keeps fill warnings visible after advancing to the next case", async () => {
+      State.settings.showWarnings = true;
+      Form.validate.mockReturnValue({
+        isValid: true,
+        missing: [],
+        warnings: [],
+      });
+      ACGMEForm.fill.mockResolvedValue({
+        success: true,
+        submitted: true,
+        warnings: ["Used default attending"],
+      });
+      document.getElementById("fillSubmitBtn").click();
+      await vi.waitFor(() =>
+        expect(Navigation.goToNextPending).toHaveBeenCalled(),
+      );
+      expect(document.getElementById("statusMessage").textContent).toContain(
+        "Used default attending",
+      );
     });
 
     it("beastModeBtn click when inactive calls BeastMode.start", () => {

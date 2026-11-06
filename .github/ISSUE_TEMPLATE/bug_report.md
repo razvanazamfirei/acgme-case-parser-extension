@@ -1,4 +1,5 @@
 ---
+
 name: Bug report
 about: Report a reproducible bug
 title: "[Bug] "

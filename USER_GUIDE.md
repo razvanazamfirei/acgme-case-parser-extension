@@ -96,7 +96,7 @@ bun run build
 
 ## 6. Load your case file
 
-1. In the popup, click `Choose Excel File`.
+1. In the case window, click `Choose Excel File`.
 2. Select your `.xlsx`, `.xls`, or `.csv` file.
 3. Confirm the case counter appears, and the first case loads.
 
@@ -108,37 +108,67 @@ bun run build
 2. Review and adjust any field values before submission.
 3. Choose one action:
 
-- `Fill Form`: fills fields on the ACGME page only
-- `Submit`: fills then submits after configured delay
+- `Fill only`: fills the ACGME form. Choose `Open ACGME`, review and submit on
+  that page, then choose `Mark submitted` in the case window to move to the next case.
+- `Fill & submit`: fills, submits, and checks that ACGME saved the case.
 - `Skip`: marks the case as skipped and moves to next pending case.
 
 ![Case Review](assets/screenshots/03-review.png)
 
-Validation and status messages appear in the popup.
+Validation and status messages appear in the case window.
 
 ![Action Status](assets/screenshots/04-actions.png)
 
-## 8. BEAST mode (bulk processing)
+## 8. Submit pending cases
 
-Use `START BEAST MODE` to auto-process all pending cases.
+Use `Submit pending cases` to process pending cases, starting at the case you
+are viewing and wrapping around to earlier cases. Submitted, skipped, and
+Needs review cases are excluded.
 
-Behavior:
+- The toolbar icon opens a separate case window. Switching tabs or clicking the
+  ACGME page keeps the batch running. Closing the case window stops the batch.
+- The window stays connected to the ACGME tab it opened from. `View ACGME`
+  returns to that tab, and clicking the extension icon brings back the same window.
+- Progress remains visible; use `Stop` or `Stop batch` to finish later.
+- The batch pauses for fields you need to correct. Choose `Continue batch`
+  after making changes, or stop and resume later.
+- The extension waits for the entry form to be ready and honors your configured
+  delay before each submission. It adds no fixed pauses between cases.
+- Use a new case entry form. If the connected tab is editing an existing case,
+  the extension asks you to open a new form and leaves the existing case untouched.
 
-- Works through pending cases automatically
-- Pauses on validation/submission issues so you can correct and continue.
-- Supports stop/resume from the same button
+### When a case needs review
+
+A submission interrupted after clicking may already be saved. Its `Needs review`
+status is retained when you reopen the case window and prevents automatic resubmission.
+An error message remaining on the page does not prove that a save failed.
+Use the `to review` counter to jump to these cases.
+
+- `Check save` looks for the saved case without submitting again. It uses the
+  original ACGME tab and recent-case list; an older save may need manual checking.
+- Expand `Update status manually` only if you need to resolve the outcome yourself.
+  Choose `It was saved` or `Not saved — allow retry` after checking ACGME.
+
+Completed cases show a compact status. Expand `Change status` to correct a
+submitted case, or `Undo skip` to return a skipped case to pending. The `Unfinished` filter includes
+pending and Needs review cases, plus the case currently displayed.
+
+If progress cannot be saved on your device, a persistent message offers
+`Retry saving`. Automatic submission stops until it can record recovery details.
 
 ## 9. Troubleshooting
 
-### Popup says, “Navigate to ACGME Case Entry page first.”
+### The connected ACGME tab is unavailable
 
-- Make sure the active tab is on:
-  `https://apps.acgme.org/ads/CaseLogs/CaseEntry/*`
+- Open Case Entry in the tab connected to the case window.
+- If that tab was closed, close the case window and click the extension icon
+  from an ACGME Case Entry tab. Your case edits and progress are retained.
+- Opening another tab during a batch does not change its destination.
 
 ### “Content script not loaded” message
 
 - Refresh the ACGME page
-- Reopen the extension popup and retry
+- Reopen the extension case window and retry
 
 ### Missing columns error during upload
 
@@ -152,9 +182,10 @@ Behavior:
 
 ## 10. Data and privacy
 
-- Files are parsed locally in your browser popup.
+- Files are parsed locally in your browser case window.
 - Settings and session progress are stored in Chrome storage.
-- The extension uses no external API calls or telemetry.
+- Submission verification reads ACGME's Last 5 Cases list using your signed-in session.
+- The extension sends no data to third-party services and collects no telemetry.
 
 See `PRIVACY.md` for details.
 

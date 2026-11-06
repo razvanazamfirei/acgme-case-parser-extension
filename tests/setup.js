@@ -18,12 +18,18 @@ global.chrome = {
       set: vi.fn(),
     },
   },
+  action: { onClicked: { addListener: vi.fn() } },
+  windows: { create: vi.fn(), update: vi.fn() },
   runtime: {
+    getContexts: vi.fn(),
+    getURL: vi.fn((path) => `chrome-extension://test/${path}`),
     onMessage: { addListener: vi.fn() },
     lastError: null,
     getManifest: vi.fn(() => ({ version: "1.3.6" })),
   },
   tabs: {
+    get: vi.fn(),
+    update: vi.fn(),
     query: vi.fn(),
     sendMessage: vi.fn(),
   },

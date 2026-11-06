@@ -17,6 +17,7 @@ describe.skipIf(!existsSync(targetPath))(
   "target.html fillCase integration",
   () => {
     beforeEach(() => {
+      history.replaceState({}, "", "/ads/CaseLogs/CaseEntry/New");
       const html = readFileSync(targetPath, "utf8");
       document.documentElement.innerHTML = html;
     });

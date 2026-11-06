@@ -8,11 +8,44 @@ import {
   resolveNeuraxialBlockadeSiteSelections,
   resolvePeripheralBlockadeSiteSelections,
 } from "../shared/blockade-sites.js";
-import { DOM } from "./constants.js";
+import { DOM, STATUS_LABELS } from "./constants.js";
 import { State } from "./state.js";
 import { UI } from "./ui.js";
 
+const CHECKBOX_ALIASES = {
+  airway: { "oral ett": "ett", lma: "supraglottic airway" },
+  vascular: { "pulmonary artery catheter": "pa catheter" },
+};
+
 export const Form = {
+  renderedCase: null,
+  renderedData: null,
+  unmappedFields: {},
+
+  saveCurrent() {
+    if (!this.renderedCase || this.renderedCase !== State.getCurrentCase())
+      return;
+    const data = this.getData();
+    for (const key of Object.keys(data)) {
+      if (
+        [
+          "institution",
+          "defaultAttending",
+          "cardiacAutoFill",
+          "auto5EPathology",
+          "showWarnings",
+        ].includes(key)
+      )
+        continue;
+      if (data[key] !== this.renderedData[key]) {
+        this.renderedCase[key] = data[key];
+        delete this.unmappedFields[key];
+        if (State.caseAttempts[State.currentIndex]?.kind === "manual")
+          delete State.caseAttempts[State.currentIndex];
+      }
+    }
+    this.renderedData = data;
+  },
   setSelect(selectId, value) {
     const select = UI.get(selectId);
     if (!select || !value) {
@@ -44,14 +77,17 @@ export const Form = {
       };
     }
 
-    // Partial match
-    const partial = options.find(
+    // Accept a complete code or phrase prefix, never a shared first letter.
+    const startsWithToken = (text, prefix) =>
+      text.startsWith(prefix) && /[\s.()-]/.test(text.charAt(prefix.length));
+    const candidates = options.filter(
       (opt) =>
         opt.value &&
-        (valueLower.startsWith(opt.value.toLowerCase()) ||
-          opt.value.toLowerCase().startsWith(valueLower)),
+        (startsWithToken(valueLower, opt.value.toLowerCase()) ||
+          startsWithToken(opt.value.toLowerCase(), valueLower)),
     );
-    if (partial) {
+    if (candidates.length === 1) {
+      const partial = candidates[0];
       select.value = partial.value;
       return { type: "partial", original: value, matched: partial.value };
     }
@@ -74,13 +110,15 @@ export const Form = {
 
     const values = valuesString
       .split(";")
-      .map((v) => v.trim().toLowerCase())
+      .map((v) => v.trim())
       .filter(Boolean);
 
     // Resolve each value to at most one checkbox. Selecting every checkbox that
     // merely shares a substring would make "Nasal ETT" also tick "ETT", which
     // logs the case as both a nasal and an oral intubation.
-    for (const value of values) {
+    for (const original of values) {
+      const lower = original.toLowerCase();
+      const value = CHECKBOX_ALIASES[name]?.[lower] || lower;
       const exact = checkboxes.find((cb) => cb.value.toLowerCase() === value);
       if (exact) {
         exact.checked = true;
@@ -88,19 +126,18 @@ export const Form = {
         continue;
       }
 
-      // No exact match, so fall back to the most specific substring candidate
-      const partial = checkboxes
-        .filter((cb) => {
-          const cbValue = cb.value.toLowerCase();
-          return cbValue.includes(value) || value.includes(cbValue);
-        })
-        .sort((a, b) => b.value.length - a.value.length)[0];
+      // A partial value is usable only when it identifies one option.
+      const candidates = checkboxes.filter((cb) => {
+        const cbValue = cb.value.toLowerCase();
+        return cbValue.includes(value) || value.includes(cbValue);
+      });
+      const partial = candidates.length === 1 ? candidates[0] : null;
 
       if (partial) {
         partial.checked = true;
         matchInfo.partial.push({ original: value, matched: partial.value });
       } else {
-        matchInfo.unmatched.push(value);
+        matchInfo.unmatched.push(original);
       }
     }
 
@@ -158,6 +195,8 @@ export const Form = {
 
     // Clear all match badges first
     UI.clearMatchBadges();
+    UI.get(DOM.validationSummary)?.classList.add("hidden");
+    this.unmappedFields = {};
 
     UI.get(DOM.caseId).value = caseData.caseId || "";
     UI.get(DOM.date).value = caseData.date || "";
@@ -175,25 +214,46 @@ export const Form = {
       caseData.procedureCategory,
     );
 
-    const _airwayMatch = this.setCheckboxGroup("airway", caseData.airway);
-    const _vascularMatch = this.setCheckboxGroup(
-      "vascular",
-      caseData.vascularAccess,
-    );
-    const _monitoringMatch = this.setCheckboxGroup(
-      "monitoring",
-      caseData.monitoring,
-    );
-    this.setCheckboxGroup(
-      "neuraxialBlockadeSite",
-      resolveNeuraxialBlockadeSiteSelections(caseData).selectedTypes.join("; "),
-    );
-    this.setCheckboxGroup(
-      "peripheralNerveBlockadeSite",
-      resolvePeripheralBlockadeSiteSelections(caseData).selectedTypes.join(
-        "; ",
-      ),
-    );
+    const mappedCase = {
+      ...caseData,
+      asa: UI.get(DOM.asa).value,
+      anesthesia: UI.get(DOM.anesthesia).value,
+    };
+    const neuraxial = resolveNeuraxialBlockadeSiteSelections(mappedCase);
+    const peripheral = resolvePeripheralBlockadeSiteSelections(mappedCase);
+    for (const [name, key, label, values, unmapped = []] of [
+      ["airway", "airway", "Airway", caseData.airway],
+      [
+        "vascular",
+        "vascularAccess",
+        "Vascular access",
+        caseData.vascularAccess,
+      ],
+      ["monitoring", "monitoring", "Monitoring", caseData.monitoring],
+      [
+        "neuraxialBlockadeSite",
+        "neuraxialBlockadeSite",
+        "Neuraxial block site",
+        neuraxial.selectedTypes.join("; "),
+        neuraxial.unmappedTokens,
+      ],
+      [
+        "peripheralNerveBlockadeSite",
+        "peripheralNerveBlockadeSite",
+        "Peripheral block site",
+        peripheral.selectedTypes.join("; "),
+      ],
+    ]) {
+      const match = this.setCheckboxGroup(name, values);
+      const unmatched = [...match.matches.unmatched, ...unmapped];
+      if (unmatched.length) {
+        this.unmappedFields[key] = label;
+        UI.showMatchBadge(name, {
+          type: "none",
+          original: unmatched.join("; "),
+        });
+      }
+    }
 
     // Show match badges for partial matches
     UI.showMatchBadge(DOM.ageCategory, ageCategoryMatch);
@@ -207,9 +267,11 @@ export const Form = {
       caseData.lifeThreateningPathology || "",
     );
 
-    this.apply5ELogic(caseData);
-    this.syncBlockadeSiteVisibility(caseData.anesthesia);
+    this.apply5ELogic(mappedCase);
+    this.syncBlockadeSiteVisibility();
     this.updateStatusBadge();
+    this.renderedCase = caseData;
+    this.renderedData = this.getData();
   },
 
   apply5ELogic(caseData) {
@@ -217,7 +279,7 @@ export const Form = {
     if (
       State.settings.auto5EPathology &&
       isFiveE &&
-      !caseData.lifeThreateningPathology
+      !Object.hasOwn(caseData, "lifeThreateningPathology")
     ) {
       this.setRadioGroup("lifeThreateningPathology", "Non-Trauma");
     }
@@ -227,16 +289,16 @@ export const Form = {
     const status = State.getCaseStatus(State.currentIndex);
     const badge = UI.get(DOM.caseStatus);
     badge.className = `status-badge ${status}`;
-    badge.textContent = UI.capitalize(status);
+    badge.textContent = STATUS_LABELS[status];
   },
 
   getData() {
     const anesthesia = UI.get(DOM.anesthesia).value;
 
     return {
-      caseId: UI.get(DOM.caseId).value,
-      date: UI.get(DOM.date).value,
-      attending: UI.get(DOM.attending).value,
+      caseId: UI.get(DOM.caseId).value.trim(),
+      date: UI.get(DOM.date).value.trim(),
+      attending: UI.get(DOM.attending).value.trim(),
       ageCategory: UI.get(DOM.ageCategory).value,
       asa: UI.get(DOM.asa).value,
       anesthesia,
@@ -268,8 +330,36 @@ export const Form = {
     const data = this.getData();
     const hasAttending = data.attending || State.settings.defaultAttending;
 
+    if (!data.caseId) missing.push("Case ID");
+    if (!data.date) missing.push("Date");
     if (!hasAttending) {
       missing.push("Attending");
+    }
+
+    // Imported values that could not be mapped need an explicit correction.
+    if (this.renderedCase === State.getCurrentCase()) {
+      for (const [key, label] of Object.entries(this.unmappedFields)) {
+        if (
+          key === "neuraxialBlockadeSite" &&
+          !isNeuraxialBlockAnesthesia(data.anesthesia)
+        )
+          continue;
+        if (
+          key === "peripheralNerveBlockadeSite" &&
+          !isPeripheralBlockAnesthesia(data.anesthesia)
+        )
+          continue;
+        missing.push(`${label} (review imported value)`);
+      }
+      for (const [key, label] of [
+        ["ageCategory", "Age"],
+        ["asa", "ASA"],
+        ["anesthesia", "Anesthesia Type"],
+        ["procedureCategory", "Procedure Category"],
+      ]) {
+        if (this.renderedCase?.[key] && !data[key])
+          missing.push(`${label} (review imported value)`);
+      }
     }
     if (!data.asa) {
       warnings.push("ASA");

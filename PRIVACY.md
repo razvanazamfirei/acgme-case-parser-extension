@@ -2,7 +2,7 @@
 
 ## Data Processing Scope
 
-The extension processes uploaded case files locally in the browser popup and
+The extension processes uploaded case files locally in the browser case window and
 fills the active ACGME case-entry web page.
 
 ## Compliance and Affiliation
@@ -17,12 +17,17 @@ fills the active ACGME case-entry web page.
 
 Stored locally:
 
-- `chrome.storage.local`: current session cases, current index, per-case status
+- `chrome.storage.local`: current session cases, current index, per-case status,
+  and recovery details for unconfirmed submissions (case ID, date, original tab
+  ID, and recent-case record keys). Recovery details are cleared when resolved.
 - `chrome.storage.sync`: user settings (institution, defaults, behavior toggles)
 
 ## Network Behavior
 
-- No external API calls.
+- Submission verification reads the ACGME Last 5 Cases endpoint using the current
+  signed-in session. Requests contain the resident IDs and case-ID column label
+  already used by that page.
+- No third-party API calls.
 - No telemetry.
 - No analytics beacons.
 - Host permission is limited to:
@@ -36,7 +41,7 @@ Stored locally:
 ## User Controls
 
 - Clear Session button removes loaded case/session state.
-- Settings can be updated at any time in the popup.
+- Settings can be updated at any time in the case window.
 
 ## Security Posture
 

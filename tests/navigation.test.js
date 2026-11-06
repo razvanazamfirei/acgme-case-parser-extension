@@ -122,13 +122,13 @@ describe("Navigation", () => {
       expect(select.options[0].textContent).toContain("CASE-001");
     });
 
-    it("filters to only pending when filterPending is checked", () => {
+    it("keeps the current case alongside unfinished cases in the filtered dropdown", () => {
       document.getElementById("filterPending").checked = true;
       State.setCaseStatus(0, "submitted");
       Navigation.update();
       const select = document.getElementById("caseJump");
-      // Only 2 pending cases visible
-      expect(select.options.length).toBe(2);
+      // Both pending cases and the current submitted case remain visible.
+      expect(select.options.length).toBe(3);
     });
 
     it("marks the current case option as selected", () => {

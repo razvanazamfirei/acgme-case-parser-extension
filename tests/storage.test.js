@@ -77,12 +77,13 @@ describe("Storage", () => {
         [STORAGE_KEYS.cases]: State.cases,
         [STORAGE_KEYS.currentIndex]: 0,
         [STORAGE_KEYS.caseStatuses]: { 0: "pending" },
+        [STORAGE_KEYS.caseAttempts]: {},
       });
     });
 
-    it("swallows errors silently", async () => {
+    it("returns failure when progress cannot be saved", async () => {
       chrome.storage.local.set.mockRejectedValue(new Error("write error"));
-      await expect(Storage.saveState()).resolves.toBeUndefined();
+      await expect(Storage.saveState()).resolves.toBe(false);
     });
   });
 
@@ -91,6 +92,53 @@ describe("Storage", () => {
   // -------------------------------------------------------------------------
 
   describe("clearState()", () => {
+    it("removes the session after an earlier pending write settles", async () => {
+      State.setCases([{ caseId: "OLD" }]);
+      let stored = {};
+      let finishWrite;
+      chrome.storage.local.set.mockImplementation((data) => {
+        const snapshot = structuredClone(data);
+        return new Promise((resolve) => {
+          finishWrite = () => {
+            stored = snapshot;
+            resolve();
+          };
+        });
+      });
+      chrome.storage.local.remove.mockImplementation(async () => {
+        stored = {};
+      });
+      const saving = Storage.saveState();
+      const clearing = Storage.clearState();
+      finishWrite();
+      await Promise.all([saving, clearing]);
+      expect(stored[STORAGE_KEYS.cases]).toBeUndefined();
+      expect(State.cases).toEqual([]);
+    });
+
+    it("does not start another write while session removal is pending", async () => {
+      State.setCases([{ caseId: "OLD" }]);
+      let finishRemoval;
+      let removalStarted;
+      const started = new Promise((resolve) => {
+        removalStarted = resolve;
+      });
+      chrome.storage.local.remove.mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            finishRemoval = resolve;
+            removalStarted();
+          }),
+      );
+      const clearing = Storage.clearState();
+      await started;
+      const saved = await Storage.saveState();
+      finishRemoval();
+      await clearing;
+      expect(saved).toBe(false);
+      expect(chrome.storage.local.set).not.toHaveBeenCalled();
+    });
+
     it("removes all state keys and resets State", async () => {
       State.cases = [{ caseId: "Y" }];
       State.currentIndex = 1;
@@ -101,14 +149,22 @@ describe("Storage", () => {
         STORAGE_KEYS.cases,
         STORAGE_KEYS.currentIndex,
         STORAGE_KEYS.caseStatuses,
+        STORAGE_KEYS.caseAttempts,
       ]);
       expect(State.cases).toEqual([]);
       expect(State.currentIndex).toBe(0);
     });
 
-    it("swallows errors silently", async () => {
+    it("reports failure instead of pretending the session was cleared", async () => {
+      State.setCases([{ caseId: "KEEP" }]);
+      State.setCaseStatus(0, "review");
+      const cases = State.cases;
       chrome.storage.local.remove.mockRejectedValue(new Error("remove error"));
-      await expect(Storage.clearState()).resolves.toBeUndefined();
+      await expect(Storage.clearState()).rejects.toThrow("remove error");
+      expect(State.cases).toBe(cases);
+      expect(State.getCaseStatus(0)).toBe("review");
+      chrome.storage.local.set.mockResolvedValue(undefined);
+      expect(await Storage.saveState()).toBe(true);
     });
   });
 
@@ -165,10 +221,12 @@ describe("Storage", () => {
     });
 
     it("throws when sync storage write fails", async () => {
+      const original = State.settings;
       chrome.storage.sync.set.mockRejectedValue(new Error("sync write error"));
       await expect(Storage.saveSettings({})).rejects.toThrow(
         "sync write error",
       );
+      expect(State.settings).toBe(original);
     });
   });
 });

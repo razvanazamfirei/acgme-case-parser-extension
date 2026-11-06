@@ -52,6 +52,32 @@ beforeEach(() => {
   vi.stubGlobal("XLSX", xlsx);
 });
 
+it("honors the workbook date system for numeric dates", async () => {
+  const workbook = xlsx.utils.book_new();
+  workbook.Workbook = { WBProps: { date1904: true } };
+  const worksheet = xlsx.utils.aoa_to_sheet([
+    headers,
+    [
+      "DATE-1",
+      43844,
+      "SMITH, JOHN",
+      "d",
+      "Test procedure",
+      "2",
+      "Other (procedure cat)",
+      "Spinal",
+      "Lumbar",
+    ],
+  ]);
+  worksheet.B2.z = "m/d/yyyy";
+  xlsx.utils.book_append_sheet(workbook, worksheet, "CaseLog");
+  const file = new File(
+    [new Uint8Array(xlsx.write(workbook, { type: "array", bookType: "xlsx" }))],
+    "date1904.xlsx",
+  );
+  expect((await Excel.parseFile(file)).cases[0].date).toBe("1/15/2024");
+});
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });

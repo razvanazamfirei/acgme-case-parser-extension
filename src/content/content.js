@@ -10,6 +10,7 @@ import {
   resolveNeuraxialBlockadeSiteSelections,
   resolvePeripheralBlockadeSiteSelections,
 } from "../shared/blockade-sites.js";
+import { getRecentCases } from "./submission.js";
 
 // Patient age category mapping
 const AGE_MAP = {
@@ -89,6 +90,7 @@ const VASCULAR_MAP = {
   "Arterial Catheter": "1256338",
   "Central Venous Catheter": "1256339",
   "PA Catheter": "156700",
+  "Pulmonary Artery Catheter": "156700",
   "Ultrasound Guided": "156693",
 };
 
@@ -177,8 +179,12 @@ function getFieldId(type) {
 
 function setSelectValue(selectId, value) {
   const select = document.getElementById(selectId);
-  if (!select) {
-    console.warn("Select not found:", selectId);
+  if (
+    !select ||
+    select.disabled ||
+    ![...select.options].some((option) => option.value === String(value))
+  ) {
+    console.warn("Select or option not found:", selectId);
     return false;
   }
 
@@ -189,8 +195,8 @@ function setSelectValue(selectId, value) {
 
 function setInputValue(inputId, value) {
   const input = document.getElementById(inputId);
-  if (!input) {
-    console.warn("Input not found:", inputId);
+  if (!input || input.disabled || input.readOnly) {
+    console.warn("Input not found or not editable:", inputId);
     return false;
   }
   input.value = value;
@@ -201,7 +207,7 @@ function setInputValue(inputId, value) {
 
 function checkProcedure(codeId) {
   const input = document.getElementById(String(codeId));
-  if (!input) {
+  if (!input || input.disabled) {
     console.warn("Input element not found:", codeId);
     return false;
   }
@@ -213,7 +219,7 @@ function checkProcedure(codeId) {
 
 function checkRadioProcedure(codeId) {
   const radio = document.getElementById(`CaseTypes_${codeId}`);
-  if (!radio) {
+  if (!radio || radio.disabled) {
     console.warn("Radio button not found:", `CaseTypes_${codeId}`);
     return false;
   }
@@ -227,6 +233,7 @@ function uncheckAllProcedures() {
   document.querySelectorAll(".cbprocedureid:checked").forEach((cb) => {
     cb.click();
   });
+  return !document.querySelector(".cbprocedureid:checked");
 }
 
 function getBlockadeSiteOptionsByType(areaLabel) {
@@ -260,7 +267,7 @@ function checkBlockadeSite(
     optionsByType?.get(targetType) ||
     getBlockadeSiteOptionsByType(areaLabel).get(targetType);
 
-  if (!option) {
+  if (!option || option.disabled) {
     if (shouldWarn) {
       console.warn(`${warningLabel} checkbox not found:`, typeLabel);
     }
@@ -352,7 +359,7 @@ function findAttendingId(name, returnAllMatches = false) {
     if (!initial || !fullName) {
       return false;
     }
-    return fullName.startsWith(initial.charAt(0));
+    return initial.length === 1 && fullName.startsWith(initial);
   };
 
   for (const opt of select.options) {
@@ -448,6 +455,23 @@ function findAttendingId(name, returnAllMatches = false) {
   // punctuation differences ("SMITH, JOHN" vs "smith john") do not cost score.
   const options = Array.from(select.options)
     .filter((opt) => opt.value && opt.value !== "")
+    .filter((opt) => {
+      const [candidateLast, candidateFirst, candidateMiddle] = normalize(
+        opt.text,
+      ).split(" ");
+      if (candidateLast !== lastName) return true;
+      if (
+        firstName.length > 1 &&
+        candidateFirst?.length > 1 &&
+        firstName !== candidateFirst
+      )
+        return false;
+      return !(
+        middleName.length > 1 &&
+        candidateMiddle?.length > 1 &&
+        middleName !== candidateMiddle
+      );
+    })
     .map((opt) => ({
       value: opt.value,
       text: opt.text,
@@ -506,8 +530,30 @@ function getAttendingOptions() {
   return options;
 }
 
+const NEW_CASE_REQUIRED =
+  "Open a new ACGME case entry form in the connected tab, then try again.";
+
+function isNewCaseForm() {
+  if (!/^\/ads\/CaseLogs\/CaseEntry\/(New|Insert)\/?$/i.test(location.pathname))
+    return false;
+  const form = document.getElementById(getFieldId("caseId"))?.form;
+  if (form?.method.toLowerCase() !== "post") return false;
+  const action = new URL(form.action, location.href);
+  return (
+    action.origin === location.origin &&
+    action.pathname.toLowerCase() === "/ads/caselogs/caseentry/insert"
+  );
+}
+
 function fillCase(caseData) {
-  console.log("Filling case:", caseData);
+  // Check the actual form action again here: the tab can navigate after readiness.
+  if (!isNewCaseForm())
+    return {
+      success: false,
+      filled: [],
+      warnings: [],
+      errors: [NEW_CASE_REQUIRED],
+    };
   const shouldWarn = caseData.showWarnings !== false;
 
   const result = {
@@ -517,8 +563,38 @@ function fillCase(caseData) {
     errors: [],
   };
 
-  // Clear previous selections
-  uncheckAllProcedures();
+  // Clear every case-specific field, including radios that cannot be toggled off by click.
+  if (!uncheckAllProcedures()) {
+    return {
+      ...result,
+      success: false,
+      errors: [
+        "Could not clear a previous selection. Open a fresh ACGME case entry form.",
+      ],
+    };
+  }
+  for (const code of [
+    ...Object.values(DIFFICULT_AIRWAY_MAP),
+    ...Object.values(LIFE_THREATENING_PATHOLOGY_MAP),
+  ]) {
+    const radio = document.getElementById(`CaseTypes_${code}`);
+    if (radio?.checked) {
+      radio.checked = false;
+      radio.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  }
+  for (const id of [getFieldId("caseId"), getFieldId("date"), "Comments"]) {
+    const input = id && document.getElementById(id);
+    if (input && !setInputValue(id, "") && input.value)
+      result.errors.push(`Could not clear previous value: ${id}`);
+  }
+  for (const id of ["Attendings", "PatientTypes"]) {
+    const select = document.getElementById(id);
+    if (select) {
+      select.value = "";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  }
 
   // Set Case ID
   const caseIdField = getFieldId("caseId");
@@ -627,9 +703,7 @@ function fillCase(caseData) {
     if (commentsContainer && !commentsContainer.classList.contains("show")) {
       commentsContainer.classList.add("show");
     }
-    const commentsArea = document.getElementById("Comments");
-    if (commentsArea) {
-      commentsArea.value = caseData.comments;
+    if (setInputValue("Comments", caseData.comments)) {
       result.filled.push("comments");
     }
   }
@@ -853,7 +927,11 @@ function fillCase(caseData) {
     caseData.asa && caseData.asa.toString().toUpperCase() === "5E";
   let pathologyToCheck = caseData.lifeThreateningPathology;
 
-  if (caseData.auto5EPathology !== false && isFiveE && !pathologyToCheck) {
+  if (
+    caseData.auto5EPathology !== false &&
+    isFiveE &&
+    !Object.hasOwn(caseData, "lifeThreateningPathology")
+  ) {
     pathologyToCheck = "Non-Trauma";
     if (shouldWarn) {
       result.warnings.push(
@@ -877,7 +955,47 @@ function fillCase(caseData) {
     }
   }
 
-  console.log("Case fill complete:", result);
+  const requiredFields = ["caseId", "date", "attending"];
+  for (const [input, field] of [
+    ["ageCategory", "age"],
+    ["institution", "institution"],
+    ["asa", "asa"],
+    ["anesthesia", "anesthesia"],
+    ["comments", "comments"],
+  ]) {
+    if (caseData[input]) requiredFields.push(field);
+  }
+  if (procCat && procCat !== "Other (procedure cat)")
+    requiredFields.push("procedureCategory");
+  for (const [input, field] of [
+    ["airway", "airway"],
+    ["vascularAccess", "vascular"],
+    ["monitoring", "monitoring"],
+    ["difficultAirway", "difficultAirway"],
+    ["lifeThreateningPathology", "lifeThreateningPathology"],
+  ]) {
+    for (const value of (caseData[input] || "")
+      .split(";")
+      .map((item) => item.trim())
+      .filter(Boolean)) {
+      const prefix =
+        input === "airway" && LARYNGOSCOPY_MAP[value] ? "laryngoscopy" : field;
+      requiredFields.push(`${prefix}:${value}`);
+    }
+  }
+  for (const value of neuraxialBlockadeSelection.selectedTypes)
+    requiredFields.push(`neuraxialBlockadeSite:${value}`);
+  for (const value of peripheralBlockadeSelection.selectedTypes)
+    requiredFields.push(`peripheralBlock:${value}`);
+  if (neuraxialBlockadeSelection.unmappedTokens.length)
+    result.errors.push(
+      `Could not map neuraxial block site: ${neuraxialBlockadeSelection.unmappedTokens.join(", ")}`,
+    );
+  for (const field of requiredFields) {
+    if (!result.filled.includes(field))
+      result.errors.push(`Could not fill required field: ${field}`);
+  }
+  result.success = result.errors.length === 0;
   return result;
 }
 
@@ -898,41 +1016,80 @@ function getVisibleErrors() {
   return [...new Set(errors)];
 }
 
-async function submitCase() {
-  // Primary selector matches the actual ACGME submit button id; fallbacks
-  // are kept in case the page structure changes.
-  const submitBtn =
+function getSubmitButton() {
+  return (
     document.getElementById("submitButton") ||
     document.getElementById("btnSave") ||
     document.querySelector('button[type="submit"]') ||
     document.querySelector('input[type="submit"]') ||
     document.querySelector(".btn-save") ||
     document.querySelector('[onclick*="Save"]') ||
-    document.querySelector('[onclick*="save"]');
+    document.querySelector('[onclick*="save"]')
+  );
+}
+
+async function submitCase(expectedCase) {
+  if (!isNewCaseForm())
+    return { success: false, attempted: false, errors: [NEW_CASE_REQUIRED] };
+  if (
+    expectedCase &&
+    ["caseId", "date"].some((field) =>
+      field === "date"
+        ? document
+            .getElementById(getFieldId(field))
+            ?.value.replace(/\b0+(\d)/g, "$1") !==
+          expectedCase[field]?.replace(/\b0+(\d)/g, "$1")
+        : document.getElementById(getFieldId(field))?.value !==
+          expectedCase[field],
+    )
+  ) {
+    return {
+      success: false,
+      attempted: false,
+      errors: [
+        "The ACGME form changed since it was filled. Fill the case again.",
+      ],
+    };
+  }
+  // Primary selector matches the actual ACGME submit button id; fallbacks
+  // are kept in case the page structure changes.
+  const submitBtn = getSubmitButton();
 
   if (!submitBtn) {
     console.error("Submit button not found");
     console.log("Available buttons:", document.querySelectorAll("button"));
-    return { success: false, errors: ["Submit button not found."] };
+    return {
+      success: false,
+      attempted: false,
+      errors: ["Submit button not found."],
+    };
   }
 
-  console.log("Found submit button:", submitBtn);
+  if (
+    submitBtn.disabled ||
+    submitBtn.matches(":disabled") ||
+    submitBtn.getAttribute("aria-disabled") === "true"
+  ) {
+    return {
+      success: false,
+      attempted: false,
+      errors: ["Submit button is disabled."],
+    };
+  }
   submitBtn.click();
   console.log("Submit button clicked");
 
-  // Wait briefly for synchronous client-side validation to run.
-  // If the submission succeeds ACGME will navigate away and this script
-  // will be destroyed before sendResponse is called — the popup handles
-  // that case by treating "message channel closed" as a success signal.
+  // A click is only an attempt. The popup verifies a new server-side case after navigation.
   await new Promise((resolve) => setTimeout(resolve, 500));
 
-  const errors = getVisibleErrors();
-  if (errors.length > 0) {
-    console.warn("Validation errors detected after submit:", errors);
-    return { success: false, errors };
-  }
-
-  return { success: true };
+  // Visible errors can predate this click. They are context, not proof that
+  // the request was rejected; only a pre-click refusal is safe to retry.
+  return {
+    success: false,
+    attempted: true,
+    uncertain: true,
+    errors: getVisibleErrors(),
+  };
 }
 
 if (import.meta.env.MODE === "test") {
@@ -955,6 +1112,41 @@ if (import.meta.env.MODE === "test") {
 // Handles messages from the popup. Returning true keeps the message channel
 // open so sendResponse can be called asynchronously.
 function handleMessage(message, _sender, sendResponse) {
+  if (message.action === "getPageState") {
+    if (
+      document.getElementById(getFieldId("caseId"))?.form &&
+      !isNewCaseForm()
+    ) {
+      sendResponse({
+        success: false,
+        ready: false,
+        blocked: true,
+        errors: [NEW_CASE_REQUIRED],
+      });
+      return true;
+    }
+    const ready = [
+      getFieldId("caseId"),
+      getFieldId("date"),
+      "Attendings",
+    ].every((id) => {
+      const field = document.getElementById(id);
+      return field && !field.matches(":disabled");
+    });
+    const button = getSubmitButton();
+    sendResponse({
+      success: true,
+      ready: Boolean(
+        isNewCaseForm() &&
+          ready &&
+          button &&
+          !button.matches(":disabled") &&
+          button.getAttribute("aria-disabled") !== "true",
+      ),
+    });
+    return true;
+  }
+
   if (message.action === "fillCase") {
     try {
       const result = fillCase(message.data);
@@ -966,12 +1158,25 @@ function handleMessage(message, _sender, sendResponse) {
     return true;
   }
 
+  if (message.action === "getRecentCases") {
+    getRecentCases()
+      .then((cases) => sendResponse({ success: true, cases }))
+      .catch((error) =>
+        sendResponse({ success: false, errors: [error.message] }),
+      );
+    return true;
+  }
+
   if (message.action === "submitCase") {
-    submitCase()
+    submitCase(message.data)
       .then((result) => sendResponse(result))
       .catch((error) => {
         console.error("Error submitting case:", error);
-        sendResponse({ success: false, errors: [error.message] });
+        sendResponse({
+          success: false,
+          uncertain: true,
+          errors: [error.message],
+        });
       });
     return true;
   }

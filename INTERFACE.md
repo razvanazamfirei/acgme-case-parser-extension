@@ -3,7 +3,7 @@
 This document defines the application interface between:
 
 - upstream case-parser exports (spreadsheet input),
-- popup runtime model,
+- case window runtime model,
 - content-script form-filling API.
 
 ## Contract Version
@@ -26,10 +26,10 @@ An optional metadata sheet (preferably `_meta`, with `Info` supported as a
 fallback) controls parsing behaviour. Its first row is treated as a header and
 is ignored. Subsequent rows contain key-value pairs in columns A and B:
 
-| Key | Values | Default |
-| ------------- | ----------------------- | --------- |
+| Key           | Values                  | Default               |
+| ------------- | ----------------------- | --------------------- |
 | `format_type` | `caselog`, `standalone` | Detected from headers |
-| `version` | string | `1` |
+| `version`     | string                  | `1`                   |
 
 Metadata keys are trimmed and case-normalized before lookup, and non-alphanumeric
 separators are normalized to underscores. This means the parser treats
@@ -37,7 +37,7 @@ separators are normalized to underscores. This means the parser treats
 (`format_type`), and likewise accepts `version` and `Version` for `version`.
 
 The `format_type` value is trimmed and case-normalized before use, so values
-like ` Caselog ` and `Standalone` are accepted. If `format_type` is missing or
+like `Caselog` and `Standalone` are accepted. If `format_type` is missing or
 blank (including CSV files and workbooks without metadata), headers determine
 the format: `Procedure Name` without `Anesthesia Type` selects `standalone`;
 otherwise the parser uses `caselog`. Explicit format metadata takes precedence.
@@ -104,18 +104,18 @@ Behavior:
 
 `Procedure Name` canonical values and their mappings:
 
-| `Procedure Name` | `anesthesia` | `airway` | `vascularAccess` |
-| ------------------------ | ------------ | ---------- | ------------------- |
-| `Intubation complex` | `GA` | `Oral ETT` | |
-| `Intubation routine` | `GA` | `Oral ETT` | |
-| `LMA` | `GA` | `LMA` | |
-| `Arterial line` | | | `Arterial Catheter` |
-| `PA catheter` | | | `Pulmonary Artery Catheter` |
-| `Epidural Blood Patch` | `Epidural` | | |
-| `Epidural` | `Epidural` | | |
-| `CSE` | `CSE` | | |
-| `Spinal` | `Spinal` | | |
-| `Peripheral nerve block` | `PNB Single` | | |
+| `Procedure Name`         | `anesthesia` | `airway`   | `vascularAccess`            |
+| ------------------------ | ------------ | ---------- | --------------------------- |
+| `Intubation complex`     | `GA`         | `Oral ETT` |                             |
+| `Intubation routine`     | `GA`         | `Oral ETT` |                             |
+| `LMA`                    | `GA`         | `LMA`      |                             |
+| `Arterial line`          |              |            | `Arterial Catheter`         |
+| `PA catheter`            |              |            | `Pulmonary Artery Catheter` |
+| `Epidural Blood Patch`   | `Epidural`   |            |                             |
+| `Epidural`               | `Epidural`   |            |                             |
+| `CSE`                    | `CSE`        |            |                             |
+| `Spinal`                 | `Spinal`     |            |                             |
+| `Peripheral nerve block` | `PNB Single` |            |                             |
 
 ## Accepted Value Sets
 
@@ -146,7 +146,7 @@ Multi-value fields:
 - `Airway Management`, `Specialized Vascular Access`, and
   `Specialized Monitoring Techniques` use `;`-delimited values.
 
-## Popup Runtime Model
+## Case window Runtime Model
 
 Each spreadsheet row is normalized to a case object regardless of input format:
 
@@ -180,7 +180,16 @@ Format-specific notes:
 Dates are formatted as `M/D/YYYY`. Excel serial numbers are converted using UTC
 to avoid timezone-dependent off-by-one errors.
 
-## Popup <-> Content Script Message API
+## Case window <-> Content Script Message API
+
+### `getPageState`
+
+Request: `{ "action": "getPageState" }`
+
+Response: `{ "success": true, "ready": true }`
+
+Read-only check for enabled case-ID, date, attending, and submit controls. The
+case window polls while a page is loading, before sending a single fill request.
 
 ### `fillCase`
 
@@ -242,20 +251,56 @@ Error envelope:
 Request:
 
 ```json
-{ "action": "submitCase" }
+{ "action": "submitCase", "data": { "caseId": "...", "date": "M/D/YYYY" } }
 ```
 
-Response:
+Response for a click whose save is not yet confirmed:
 
 ```json
-{ "success": true }
+{
+  "success": false,
+  "attempted": true,
+  "uncertain": true,
+  "errors": []
+}
 ```
 
 or
 
 ```json
-{ "success": false, "errors": ["..."] }
+{ "success": false, "attempted": false, "errors": ["..."] }
 ```
+
+`attempted: false` is returned only when submission was refused before clicking.
+Errors observed after a click retain uncertainty, since they may be stale.
+Both filling and submitting require a `CaseEntry/New` or `CaseEntry/Insert` page
+whose form posts to the same-origin `CaseEntry/Insert` endpoint; an existing-case
+editor is left untouched.
+
+The case window reads `getRecentCases` before submitting and polls it afterward. A
+case is automatically marked submitted only when a new record link appears with the matching
+case ID and date. Navigation, a closed message channel, and the absence of
+validation errors do not confirm a save. An unconfirmed attempt stops bulk
+processing and is persisted as `review` (displayed as Needs review). A recovery
+record in `acgme_caseAttempts` holds the case ID, date, original tab ID, and
+baseline record keys. This record is saved before sending `submitCase`.
+Rechecking reads recent cases without clicking Submit; users may also explicitly
+mark the case saved or return it to pending after checking ACGME. Confirmed saves
+clear their recovery record. Fill-only records use `kind: "manual"` and keep the
+case pending until the user records the manual save. Their instructions identify
+the case to check rather than asserting that it still occupies the ACGME form.
+A failed refill clears the earlier manual-fill action for that case.
+
+### `getRecentCases`
+
+Request: `{ "action": "getRecentCases" }`
+
+Response: `{ "success": true, "cases": [{ "caseId": "...", "date": "...", "key": "..." }] }`
+
+The content script reads ACGME's Last 5 Cases endpoint. `key` identifies the
+server record using its case-log links, excluding display timestamps. Missing
+verification controls, record links, authentication, or an unexpected response
+produce `{ "success": false, "errors": ["..."] }`.
 
 ### `getAttendingOptions`
 
